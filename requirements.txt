@@ -1,0 +1,5 @@
+numpy==1.10.2
+protobuf==3.0.0a3
+six==1.10.0
+tensorflow==0.6.0
+wheel==0.26.0
