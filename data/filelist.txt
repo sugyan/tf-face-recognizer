@@ -1,0 +1,3 @@
+data/bin1
+data/bin2
+data/bin3
