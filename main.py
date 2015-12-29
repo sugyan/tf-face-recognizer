@@ -1,9 +1,15 @@
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
+import time
+import os
 
 cifar10.IMAGE_SIZE = 96
 cifar10.NUM_CLASSES = 6
-cifar10.FLAGS.batch_size = 10
+cifar10.FLAGS.batch_size = 64
+cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1000
+# cifar10.NUM_EPOCHS_PER_DECAY = 1000.0
+# cifar10.LEARNING_RATE_DECAY_FACTOR = 0.02
+cifar10.INITIAL_LEARNING_RATE = 0.05
 
 def inputs():
     # target files
@@ -32,6 +38,9 @@ def inputs():
     return image, label
 
 def train():
+    checkpoint_dir = 'train'
+    checkpoint_path = os.path.join(checkpoint_dir, 'model.ckpt')
+
     image, label = inputs()
     images, label_batch = tf.train.shuffle_batch(
         [image, label],
@@ -40,21 +49,58 @@ def train():
         min_after_dequeue = 1
     )
     labels = tf.reshape(label_batch, [cifar10.FLAGS.batch_size])
+
     logits = cifar10.inference(images)
+    loss = cifar10.loss(logits, labels)
+    global_step = tf.Variable(0, trainable=False)
+    train_op = cifar10.train(loss, global_step)
+    saver = tf.train.Saver(tf.all_variables())
 
     with tf.Session() as sess:
-        init = tf.initialize_all_variables()
-        sess.run(init)
+        prev_ckpt = None
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            prev_ckpt = ckpt.model_checkpoint_path
+            saver.restore(sess, ckpt.model_checkpoint_path)
+        else:
+            init = tf.initialize_all_variables()
+            sess.run(init)
 
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
         try:
-            print sess.run(logits)
-            # TODO
+            loss_values = []
+            for i in range(100):
+                start_time = time.time()
+                _, loss_value, global_step_value = sess.run([train_op, loss, global_step])
+                loss_values.append(loss_value)
+                duration = time.time() - start_time
+                print '%3d: %f (%.3f sec/batch)' % (global_step_value, loss_value, duration)
+            if loss_values[0] > loss_values[-1]:
+                os.remove(prev_ckpt)
+                saver.save(sess, checkpoint_path, global_step=global_step_value)
+            else:
+                print 'train failed!'
         except Exception as e:
             coord.request_stop(e)
         coord.request_stop()
         coord.join(threads)
 
+def print_parameters():
+    print '''
+    FLAGS.batch_size = %s
+    NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = %s
+    NUM_EPOCHS_PER_DECAY = %s
+    LEARNING_RATE_DECAY_FACTOR = %s
+    INITIAL_LEARNING_RATE = %s
+    ''' % (
+        cifar10.FLAGS.batch_size,
+        cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN,
+        cifar10.NUM_EPOCHS_PER_DECAY,
+        cifar10.LEARNING_RATE_DECAY_FACTOR,
+        cifar10.INITIAL_LEARNING_RATE,
+    )
+
 if __name__ == '__main__':
+    print_parameters()
     train()
