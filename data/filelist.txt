@@ -1,3 +1,5 @@
-data/bin1
-data/bin2
-data/bin3
+data/train0.bin
+data/train1.bin
+data/train2.bin
+data/train3.bin
+data/train4.bin
