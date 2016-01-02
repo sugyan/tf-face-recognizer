@@ -3,42 +3,13 @@ import tensorflow as tf
 import time
 import os
 
-cifar10.IMAGE_SIZE = 48
 cifar10.NUM_CLASSES = 6
 cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 250
-cifar10.NUM_EPOCHS_PER_DECAY = 1000.0
-# cifar10.INITIAL_LEARNING_RATE = 0.09
-
-def inputs():
-    # read from target files
-    filenames = []
-    with open('./data/filelist.txt', 'r') as f:
-        for line in f:
-            filenames.append(line.strip())
-    fqueue = tf.train.string_input_producer(filenames)
-
-    label_bytes = 1
-    image_bytes = 48 * 48 * 3
-    record_bytes = image_bytes + label_bytes
-    reader = tf.FixedLengthRecordReader(record_bytes=record_bytes)
-    key, value = reader.read(fqueue)
-    record_bytes = tf.decode_raw(value, tf.uint8)
-    # The first bytes represent the label, which we convert from uint8->int32.
-    label = tf.cast(tf.slice(record_bytes, [0], [label_bytes]), tf.int32)
-    # The remaining bytes after the label represent the image, which we reshape to [height, width, depth].
-    uint8image = tf.reshape(tf.slice(record_bytes, [label_bytes], [image_bytes]), [3, 48, 48])
-    image = tf.transpose(tf.cast(uint8image, tf.float32), [1, 2, 0])
-    return tf.train.shuffle_batch(
-        [image, label],
-        batch_size = cifar10.FLAGS.batch_size,
-        capacity = 3 * cifar10.FLAGS.batch_size,
-        min_after_dequeue = 1
-    )
 
 def train(checkpoint_dir):
     # ops
     global_step = tf.Variable(0, trainable=False)
-    images, labels = inputs()
+    images, labels = cifar10.inputs(False)
     logits = cifar10.inference(tf.image.resize_images(images, cifar10.IMAGE_SIZE, cifar10.IMAGE_SIZE))
     loss = cifar10.loss(logits, labels)
     train_op = cifar10.train(loss, global_step)
@@ -76,9 +47,8 @@ def train(checkpoint_dir):
             saver.save(sess, checkpoint_path, global_step=global_step_value)
             os.remove(ckpt.model_checkpoint_path)
             # add summary
-            if global_step_value % 1000 == 0:
-                summary_str = sess.run(summary_op)
-                summary_writer.add_summary(summary_str, global_step_value)
+            summary_str = sess.run(summary_op)
+            summary_writer.add_summary(summary_str, global_step_value)
 
 def print_parameters():
     print '''
