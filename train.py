@@ -1,13 +1,24 @@
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
+import numpy as np
 import time
 import os
 
 cifar10.IMAGE_SIZE = 32
 cifar10.NUM_CLASSES = 6
-cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 250
+cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
+cifar10.NUM_EPOCHS_PER_DECAY = 500.0
+cifar10.LEARNING_RATE_DECAY_FACTOR = 0.3
 
-def train(checkpoint_dir):
+FLAGS = tf.app.flags.FLAGS
+
+tf.app.flags.DEFINE_integer('max_steps', 100000,
+                            """Number of batches to run.""")
+tf.app.flags.DEFINE_string('train_dir', 'train',
+                           """Directory where to write event logs """
+                           """and checkpoint.""")
+
+def train():
     # ops
     global_step = tf.Variable(0, trainable=False)
     images, labels = cifar10.distorted_inputs()
@@ -18,38 +29,35 @@ def train(checkpoint_dir):
 
     with tf.Session() as sess:
         saver = tf.train.Saver(tf.all_variables())
-        checkpoint_path = os.path.join(checkpoint_dir, 'model.ckpt')
-        summary_writer = tf.train.SummaryWriter(checkpoint_dir, graph_def=sess.graph_def)
-        if not tf.train.get_checkpoint_state(checkpoint_dir):
+        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, graph_def=sess.graph_def)
+
+        # restore or initialize variables
+        ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            saver.restore(sess, ckpt.model_checkpoint_path)
+        else:
             sess.run(tf.initialize_all_variables())
-            saver.save(sess, checkpoint_path, global_step=0)
 
+        # Start the queue runners.
         tf.train.start_queue_runners(sess=sess)
-        while True:
-            # restore or initialize variables
-            ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-            if ckpt.model_checkpoint_path:
-                saver.restore(sess, ckpt.model_checkpoint_path)
 
-            loss_values = []
-            # train
-            for step in range(100):
-                start_time = time.time()
-                _, loss_value, global_step_value = sess.run([train_op, loss, global_step])
-                duration = time.time() - start_time
-                print '%d: %f (%.3f sec/batch)' % (global_step_value, loss_value, duration)
-                loss_values.append(loss_value)
-                if loss_value > 1e6:
-                    break
-            if not loss_values[0] > loss_values[-1]:
-                print 'failed.'
-                continue
-            # save and remove old checkpoint
-            saver.save(sess, checkpoint_path, global_step=global_step_value)
-            os.remove(ckpt.model_checkpoint_path)
-            # add summary
-            summary_str = sess.run(summary_op)
-            summary_writer.add_summary(summary_str, global_step_value)
+        start = sess.run(global_step)
+        for step in xrange(start, FLAGS.max_steps):
+            start_time = time.time()
+            _, loss_value = sess.run([train_op, loss])
+            duration = time.time() - start_time
+
+            assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
+
+            print '%d: %f (%.3f sec/batch)' % (step, loss_value, duration)
+
+            if step % 100 == 0:
+                summary_str = sess.run(summary_op)
+                summary_writer.add_summary(summary_str, step)
+            if step % 1000 == 0:
+                # Save the model checkpoint periodically.
+                checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=step)
 
 def print_parameters():
     print '''
@@ -68,4 +76,4 @@ def print_parameters():
 
 if __name__ == '__main__':
     print_parameters()
-    train(os.path.join(os.path.dirname(__file__), 'train'))
+    train()
