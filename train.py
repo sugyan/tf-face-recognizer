@@ -3,13 +3,14 @@ import tensorflow as tf
 import time
 import os
 
+cifar10.IMAGE_SIZE = 32
 cifar10.NUM_CLASSES = 6
 cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 250
 
 def train(checkpoint_dir):
     # ops
     global_step = tf.Variable(0, trainable=False)
-    images, labels = cifar10.inputs(False)
+    images, labels = cifar10.distorted_inputs()
     logits = cifar10.inference(tf.image.resize_images(images, cifar10.IMAGE_SIZE, cifar10.IMAGE_SIZE))
     loss = cifar10.loss(logits, labels)
     train_op = cifar10.train(loss, global_step)
