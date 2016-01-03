@@ -6,13 +6,13 @@ import os
 
 cifar10.IMAGE_SIZE = 32
 cifar10.NUM_CLASSES = 6
-cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
-cifar10.NUM_EPOCHS_PER_DECAY = 500.0
-cifar10.LEARNING_RATE_DECAY_FACTOR = 0.3
+cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 750
+cifar10.NUM_EPOCHS_PER_DECAY = 700.0
+cifar10.LEARNING_RATE_DECAY_FACTOR = 0.5
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('max_steps', 100000,
+tf.app.flags.DEFINE_integer('max_steps', 30000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs """
@@ -29,7 +29,7 @@ def train():
 
     with tf.Session() as sess:
         saver = tf.train.Saver(tf.all_variables())
-        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, graph_def=sess.graph_def)
+        summary_writer = tf.train.SummaryWriter(FLAGS.train_dir)
 
         # restore or initialize variables
         ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
