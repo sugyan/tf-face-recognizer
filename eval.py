@@ -1,10 +1,10 @@
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
 import numpy as np
-import os
 
 cifar10.IMAGE_SIZE = 32
 cifar10.NUM_CLASSES = 6
+cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 150
 
 FLAGS = tf.app.flags.FLAGS
 
