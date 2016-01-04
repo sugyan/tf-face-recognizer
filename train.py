@@ -7,12 +7,12 @@ import os
 cifar10.IMAGE_SIZE = 32
 cifar10.NUM_CLASSES = 6
 cifar10.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 750
-cifar10.NUM_EPOCHS_PER_DECAY = 700.0
-cifar10.LEARNING_RATE_DECAY_FACTOR = 0.5
+cifar10.NUM_EPOCHS_PER_DECAY = 500.0
+cifar10.LEARNING_RATE_DECAY_FACTOR = 0.3
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('max_steps', 30000,
+tf.app.flags.DEFINE_integer('max_steps', 10000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs """
@@ -51,10 +51,9 @@ def train():
 
             print '%d: %f (%.3f sec/batch)' % (step, loss_value, duration)
 
-            if step % 100 == 0:
+            if step % 100 == 0 or (step + 1) == FLAGS.max_steps:
                 summary_str = sess.run(summary_op)
                 summary_writer.add_summary(summary_str, step)
-            if step % 1000 == 0:
                 # Save the model checkpoint periodically.
                 checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
                 saver.save(sess, checkpoint_path, global_step=step)
