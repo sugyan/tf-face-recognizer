@@ -60,3 +60,6 @@ target/
 # Others
 venv/
 data/**/*.bin
+node_modules/
+/static/js/*.js
+!static/js/jquery.min.js

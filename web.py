@@ -1,7 +1,7 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
-import json
+import base64
 
 cifar10.NUM_CLASSES = 6
 
@@ -27,15 +27,12 @@ app.debug = True
 
 @app.route('/recognize', methods=['POST'])
 def api():
-    f = request.files['image']
-    data = f.read()
-    for decoder in (tf.image.decode_jpeg, tf.image.decode_png):
-        try:
-            decoded = decoder(data, channels=3)
-            if decoded.eval(session=tf.Session()) is not None:
-                break
-        except tf.errors.InvalidArgumentError as e:
-            app.logger.warning(e.message)
+    image = request.form['image']
+    data = base64.b64decode(image.split(',')[1])
+    if image.startswith('data:image/jpeg;base64,'):
+        decoded = tf.image.decode_jpeg(data, channels=3)
+    if image.startswith('data:image/png;base64,'):
+        decoded = tf.image.decode_png(data, channels=3)
     inputs = tf.reshape(decoded, decoded.eval(session=tf.Session()).shape)
     inputs = tf.image.per_image_whitening(inputs)
     inputs = tf.image.resize_images(tf.expand_dims(inputs, 0), FLAGS.image_size, FLAGS.image_size)
@@ -44,7 +41,7 @@ def api():
 
 @app.route('/')
 def root():
-    return 'OK'
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run()
