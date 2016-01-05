@@ -3,9 +3,6 @@ from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
 import json
 
-from gunicorn.app.base import BaseApplication
-from gunicorn.six import iteritems
-
 cifar10.NUM_CLASSES = 6
 
 FLAGS = tf.app.flags.FLAGS
