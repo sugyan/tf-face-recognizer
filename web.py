@@ -10,6 +10,8 @@ tf.app.flags.DEFINE_string('checkpoint_dir', 'train',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('image_size', 32,
                            """Image size.""")
+tf.app.flags.DEFINE_integer('port', 5000,
+                           """Application port.""")
 
 images = tf.placeholder(tf.float32, shape=(1, FLAGS.image_size, FLAGS.image_size, 3))
 logits = tf.nn.softmax(cifar10.inference(images))
@@ -44,4 +46,4 @@ def root():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=FLAGS.port)
