@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
 import base64
@@ -27,7 +27,7 @@ else:
 app = Flask(__name__)
 app.debug = True
 
-@app.route('/recognize', methods=['POST'])
+@app.route('/', methods=['POST'])
 def api():
     image = request.form['image']
     data = base64.b64decode(image.split(',')[1])
@@ -40,10 +40,6 @@ def api():
     inputs = tf.image.resize_images(tf.expand_dims(inputs, 0), FLAGS.image_size, FLAGS.image_size)
     output = sess.run(logits, feed_dict={images: inputs.eval(session=tf.Session())})
     return jsonify(result=output.flatten().tolist())
-
-@app.route('/')
-def root():
-    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=FLAGS.port)
