@@ -1,1 +1,1 @@
-# tf-face-recognizer
+# tf-classifier
