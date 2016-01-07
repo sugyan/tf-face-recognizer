@@ -23,6 +23,7 @@ if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 else:
     print('No checkpoint file found')
+    sess.run(tf.initialize_all_variables())
 
 app = Flask(__name__)
 app.debug = True
