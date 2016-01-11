@@ -2,11 +2,15 @@ from flask import Flask, jsonify, request
 from tensorflow.models.image.cifar10 import cifar10
 import tensorflow as tf
 import base64
+import urllib
+import os
 
 cifar10.NUM_CLASSES = 6
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string('checkpoint_dir', 'train',
+tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
+                           """Directory where to read model checkpoints.""")
+tf.app.flags.DEFINE_string('download_url', 'http://',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('image_size', 32,
                            """Image size.""")
@@ -18,12 +22,11 @@ logits = tf.nn.softmax(cifar10.inference(images))
 
 sess = tf.Session()
 saver = tf.train.Saver(tf.all_variables())
-ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
-if ckpt and ckpt.model_checkpoint_path:
-    saver.restore(sess, ckpt.model_checkpoint_path)
-else:
-    print('No checkpoint file found')
-    sess.run(tf.initialize_all_variables())
+if not os.path.isfile(FLAGS.checkpoint_path):
+    print 'No checkpoint file found'
+    print urllib.urlretrieve(FLAGS.download_url, FLAGS.checkpoint_path)
+saver.restore(sess, FLAGS.checkpoint_path)
+
 
 app = Flask(__name__)
 app.debug = True
