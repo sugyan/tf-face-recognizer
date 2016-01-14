@@ -1,11 +1,27 @@
 import tensorflow as tf
 import os
 
+FLAGS = tf.app.flags.FLAGS
+
+tf.app.flags.DEFINE_string('data_dir', 'data/v2/tfrecords',
+                           """Path to the TFRecord data directory.""")
+
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
 NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '10'))
 
-def inputs():
-    return 1
+def distorted_inputs(data_dir):
+    filenames = [os.path.join(data_dir, 'data%d.tfrecords' % i) for i in range(1, 3)]
+    fqueue = tf.train.string_input_producer(filenames)
+    reader = tf.TFRecordReader()
+    key, value = reader.read(fqueue)
+    features = tf.parse_single_example(value, features={
+        'label': tf.FixedLenFeature([], tf.int64),
+        'image_raw': tf.FixedLenFeature([], tf.string),
+    })
+    jpeg = tf.image.decode_jpeg(features['image_raw'], channels=3)
+    image = tf.cast(jpeg, tf.float32)
+    cropped = tf.image.random_crop(image, [96, 96])
+    return tf.train.shuffle_batch([cropped, features['label']], batch_size=BATCH_SIZE, capacity=2, min_after_dequeue=1)
 
 def inference(images):
     def _variable_with_weight_decay(name, shape, stddev, wd):
@@ -69,24 +85,24 @@ def inference(images):
     return fc7
 
 def loss(logits, labels):
+    # TODO
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, labels)
     mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
     tf.add_to_collection('losses', mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
 def main(argv=None):
-    images = tf.placeholder(tf.float32, shape=(BATCH_SIZE, 96, 96, 3))
-    labels = tf.placeholder(tf.float32, shape=(BATCH_SIZE, NUM_CLASSES))
+    images, labels = distorted_inputs(FLAGS.data_dir)
     logits = inference(images)
-    losses = loss(logits, labels)
-    saver = tf.train.Saver(tf.all_variables())
+    print logits
+    # losses = loss(logits, labels)
+    # saver = tf.train.Saver(tf.all_variables())
     with tf.Session() as sess:
         # summary_writer = tf.train.SummaryWriter('train', graph_def=sess.graph_def)
         sess.run(tf.initialize_all_variables())
-        import numpy as np
-        randimages = np.random.rand(BATCH_SIZE, 96, 96, 3)
-        randlabels = np.random.rand(BATCH_SIZE, NUM_CLASSES)
-        print sess.run(losses, feed_dict={images: randimages, labels: randlabels})
+
+        tf.train.start_queue_runners(sess=sess)
+        print sess.run(logits)
 
 if __name__ == '__main__':
     tf.app.run()

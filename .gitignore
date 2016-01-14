@@ -60,6 +60,7 @@ target/
 # Others
 venv/
 data/**/*.bin
+data/**/*.tfrecords
 node_modules/
 /static/js/*.js
 !static/js/jquery.min.js
