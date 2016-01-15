@@ -10,12 +10,12 @@ url_base = sys.argv[1]
 
 # config
 targets = (
-    {'label_id': 1, 'num': 20},
-    {'label_id': 2, 'num': 20},
-    {'label_id': 3, 'num': 20},
-    {'label_id': 4, 'num': 20},
-    {'label_id': 5, 'num': 20},
-    {'label_id': 6, 'num': 10},
+    {'label_id': 1, 'num': 100},
+    {'label_id': 2, 'num': 100},
+    {'label_id': 3, 'num': 100},
+    {'label_id': 4, 'num': 100},
+    {'label_id': 5, 'num': 100},
+    {'label_id': 6, 'num':  50},
 )
 
 # download source data
@@ -34,8 +34,12 @@ random.shuffle(sources)
 
 # fetch all data and write tfrecords
 destinations = (
-    { 'name': 'data1.tfrecords', 'num': 50 },
-    { 'name': 'data2.tfrecords', 'num': 50 },
+    { 'name': 'data1.tfrecords', 'num': 100 },
+    { 'name': 'data2.tfrecords', 'num': 100 },
+    { 'name': 'data3.tfrecords', 'num': 100 },
+    { 'name': 'data4.tfrecords', 'num': 100 },
+    { 'name': 'data5.tfrecords', 'num': 100 },
+    { 'name': 'test.tfrecords',  'num':  50 },
 )
 for destination in destinations:
     filename = os.path.join(os.path.dirname(__file__), 'tfrecords', destination['name'])

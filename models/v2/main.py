@@ -15,7 +15,7 @@ BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
 NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '10'))
 
 def inputs(data_dir, distort=False):
-    filenames = [os.path.join(data_dir, 'data%d.tfrecords' % i) for i in range(1, 3)]
+    filenames = [os.path.join(data_dir, 'data%d.tfrecords' % i) for i in range(1, 6)]
     fqueue = tf.train.string_input_producer(filenames)
     reader = tf.TFRecordReader()
     key, value = reader.read(fqueue)
@@ -41,7 +41,7 @@ def inputs(data_dir, distort=False):
     min_fraction_of_examples_in_queue = 0.4
     min_queue_examples = int(FLAGS.num_examples_per_epoch_for_train * min_fraction_of_examples_in_queue)
     images, labels = tf.train.shuffle_batch(
-        [tf.image.per_image_whitening(image), features['label']],
+        [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int32)],
         batch_size=BATCH_SIZE,
         capacity=min_queue_examples + 3 * BATCH_SIZE,
         min_after_dequeue=min_queue_examples
@@ -112,26 +112,50 @@ def inference(images):
     return fc7
 
 def loss(logits, labels):
-    # TODO
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, labels)
+    sparse_labels = tf.reshape(labels, [BATCH_SIZE, 1])
+    indices = tf.reshape(tf.range(BATCH_SIZE), [BATCH_SIZE, 1])
+    concated = tf.concat(1, [indices, sparse_labels])
+    dense_labels = tf.sparse_to_dense(concated, [BATCH_SIZE, NUM_CLASSES], 1.0, 0.0)
+
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, dense_labels)
     mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
     tf.add_to_collection('losses', mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
+def train(total_loss, global_step):
+    loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
+    losses = tf.get_collection('losses')
+    loss_averages_op = loss_averages.apply(losses + [total_loss])
+    with tf.control_dependencies([loss_averages_op]):
+        opt = tf.train.AdamOptimizer()
+        grads = opt.compute_gradients(total_loss)
+
+    # with tf.control_dependencies([apply_gradient_op, variables_averages_op]):
+    apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
+    with tf.control_dependencies([apply_gradient_op]):
+        train_op = tf.no_op(name='train')
+    return train_op
+
 def main(argv=None):
+    global_step = tf.Variable(0, trainable=False)
     images, labels = inputs(FLAGS.data_dir, distort=True)
     logits = inference(images)
-    print logits
-    # losses = loss(logits, labels)
+    losses = loss(logits, labels)
+    train_op = train(losses, global_step)
     # saver = tf.train.Saver(tf.all_variables())
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph_def=sess.graph_def)
         sess.run(tf.initialize_all_variables())
 
         tf.train.start_queue_runners(sess=sess)
-        print sess.run(logits)
-        summary = sess.run(tf.merge_all_summaries())
-        summary_writer.add_summary(summary)
+
+        for step in range(20):
+            _, loss_value = sess.run([train_op, losses])
+            print loss_value
+
+            if step % 4 == 0:
+                summary = sess.run(tf.merge_all_summaries())
+                summary_writer.add_summary(summary)
 
 if __name__ == '__main__':
     tf.app.run()
