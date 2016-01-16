@@ -12,9 +12,10 @@ INPUT_SIZE = 96
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
 NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '10'))
 
-def inputs(data_dir, distort=False):
-    filenames = [os.path.join(data_dir, 'data%d.tfrecords' % i) for i in range(1, 6)]
-    fqueue = tf.train.string_input_producer(filenames)
+MOVING_AVERAGE_DECAY = 0.9999
+
+def inputs(files, distort=False):
+    fqueue = tf.train.string_input_producer(files)
     reader = tf.TFRecordReader()
     key, value = reader.read(fqueue)
     features = tf.parse_single_example(value, features={
