@@ -4,8 +4,6 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'data/v2/tfrecords',
-                           """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 100,
                             """number of examples for train""")
 
@@ -135,27 +133,3 @@ def train(total_loss, global_step):
     with tf.control_dependencies([apply_gradient_op]):
         train_op = tf.no_op(name='train')
     return train_op
-
-def main(argv=None):
-    global_step = tf.Variable(0, trainable=False)
-    images, labels = inputs(FLAGS.data_dir, distort=True)
-    logits = inference(images)
-    losses = loss(logits, labels)
-    train_op = train(losses, global_step)
-    # saver = tf.train.Saver(tf.all_variables())
-    with tf.Session() as sess:
-        summary_writer = tf.train.SummaryWriter('train', graph_def=sess.graph_def)
-        sess.run(tf.initialize_all_variables())
-
-        tf.train.start_queue_runners(sess=sess)
-
-        for step in range(20):
-            _, loss_value = sess.run([train_op, losses])
-            print loss_value
-
-            if step % 4 == 0:
-                summary = sess.run(tf.merge_all_summaries())
-                summary_writer.add_summary(summary)
-
-if __name__ == '__main__':
-    tf.app.run()
