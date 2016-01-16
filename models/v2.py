@@ -124,6 +124,10 @@ def train(total_loss, global_step):
     loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
     losses = tf.get_collection('losses')
     loss_averages_op = loss_averages.apply(losses + [total_loss])
+
+    for l in losses + [total_loss]:
+        tf.scalar_summary(l.op.name + ' (raw)', l)
+
     with tf.control_dependencies([loss_averages_op]):
         opt = tf.train.AdamOptimizer()
         grads = opt.compute_gradients(total_loss)
