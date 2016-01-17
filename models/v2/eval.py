@@ -40,19 +40,18 @@ def eval_once(saver, top_k_op):
             coord.join(threads, stop_grace_period_secs=10)
 
 def main(argv=None):
-    files = [os.path.join(FLAGS.data_dir, 'data%d.tfrecords' % i) for i in range(1, 2)]
-    images, labels = v2.inputs(files, distort=True)
+    files = [os.path.join(FLAGS.data_dir, 'test.tfrecords') for i in range(1, 2)]
+    images, labels = v2.inputs(files, distort=False)
     logits = v2.inference(images)
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
-
     variable_averages = tf.train.ExponentialMovingAverage(v2.MOVING_AVERAGE_DECAY)
     variables_to_restore = {}
     for v in tf.all_variables():
-        # if v in tf.trainable_variables():
-        #     name = variable_averages.average_name(v)
-        # else:
-        #     name = v.op.name
-        variables_to_restore[v.op.name] = v
+        if v in tf.trainable_variables():
+            name = variable_averages.average_name(v)
+        else:
+            name = v.op.name
+        variables_to_restore[name] = v
     saver = tf.train.Saver(variables_to_restore)
 
     eval_once(saver, top_k_op)
