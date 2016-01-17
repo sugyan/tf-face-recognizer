@@ -14,6 +14,8 @@ tf.app.flags.DEFINE_string('data_dir', 'data/v2/tfrecords',
                            """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
+tf.app.flags.DEFINE_integer('max_steps', 1000,
+                            """Number of batches to run.""")
 
 def main(argv=None):
     global_step = tf.Variable(0, trainable=False)
@@ -24,14 +26,14 @@ def main(argv=None):
     losses = v2.loss(logits, labels)
     train_op = v2.train(losses, global_step)
     summary_op = tf.merge_all_summaries()
-    saver = tf.train.Saver(tf.all_variables())
+    saver = tf.train.Saver(tf.all_variables(), max_to_keep=10)
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph_def=sess.graph_def)
         sess.run(tf.initialize_all_variables())
 
         tf.train.start_queue_runners(sess=sess)
 
-        for step in range(100):
+        for step in range(FLAGS.max_steps):
             start_time = time.time()
             _, loss_value = sess.run([train_op, losses])
             duration = time.time() - start_time
@@ -41,7 +43,7 @@ def main(argv=None):
             format_str = '%s: step %d, loss = %.5f (%.3f sec/batch)'
             print format_str % (datetime.now(), step, loss_value, duration)
 
-            if step % 10 == 0:
+            if step % 100 == 0 or (step + 1) == FLAGS.max_steps:
                 summary_str = sess.run(summary_op)
                 summary_writer.add_summary(summary_str, step)
 
