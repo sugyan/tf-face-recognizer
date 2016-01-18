@@ -102,19 +102,19 @@ def inference(images):
         for d in pool4.get_shape()[1:].as_list():
             dim *= d
         reshape = tf.reshape(pool4, [BATCH_SIZE, dim])
-        weights = _variable_with_weight_decay('weights', shape=[dim, 1024], stddev=0.01, wd=0.005)
+        weights = _variable_with_weight_decay('weights', shape=[dim, 1024], stddev=0.02, wd=0.005)
         biases = tf.get_variable('biases', shape=[1024], initializer=tf.constant_initializer(0.0))
         fc5 = tf.nn.relu(tf.nn.bias_add(tf.matmul(reshape, weights), biases), name=scope.name)
         _activation_summary(fc5)
 
     with tf.variable_scope('fc6') as scope:
-        weights = _variable_with_weight_decay('weights', shape=[1024, 256], stddev=0.01, wd=0.005)
+        weights = _variable_with_weight_decay('weights', shape=[1024, 256], stddev=0.02, wd=0.005)
         biases = tf.get_variable('biases', shape=[256], initializer=tf.constant_initializer(0.0))
         fc6 = tf.nn.relu(tf.nn.bias_add(tf.matmul(fc5, weights), biases), name=scope.name)
         _activation_summary(fc6)
 
     with tf.variable_scope('fc7') as scope:
-        weights = tf.get_variable('weights', shape=[256, NUM_CLASSES], initializer=tf.truncated_normal_initializer(stddev=1/256.0))
+        weights = tf.get_variable('weights', shape=[256, NUM_CLASSES], initializer=tf.truncated_normal_initializer(stddev=0.02))
         biases = tf.get_variable('biases', shape=[NUM_CLASSES], initializer=tf.constant_initializer(0.0))
         fc7 = tf.nn.bias_add(tf.matmul(fc6, weights), biases, name=scope.name)
         _activation_summary(fc7)
