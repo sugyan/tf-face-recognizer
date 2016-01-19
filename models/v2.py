@@ -10,7 +10,7 @@ tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 100,
 IMAGE_SIZE = 112
 INPUT_SIZE = 96
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
-NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '10'))
+NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '5'))
 
 MOVING_AVERAGE_DECAY = 0.9999
 
@@ -24,17 +24,19 @@ def inputs(files, distort=False):
     })
     image = tf.image.decode_jpeg(features['image_raw'], channels=3)
     image = tf.cast(image, tf.float32)
+    image.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
 
     if distort:
-        cropsize = random.randint(INPUT_SIZE, IMAGE_SIZE)
+        cropsize = random.randint(INPUT_SIZE, INPUT_SIZE + (IMAGE_SIZE - INPUT_SIZE) / 2)
+        framesize = INPUT_SIZE + (cropsize - INPUT_SIZE) * 2
+        image = tf.image.resize_image_with_crop_or_pad(image, framesize, framesize)
         image = tf.image.random_crop(image, [cropsize, cropsize])
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_brightness(image, max_delta=0.63)
+        image = tf.image.random_brightness(image, max_delta=0.2)
         image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
         image = tf.image.random_hue(image, max_delta=0.02)
         image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
     else:
-        image = tf.image.random_crop(image, [IMAGE_SIZE, IMAGE_SIZE])
         image = tf.image.resize_image_with_crop_or_pad(image, INPUT_SIZE, INPUT_SIZE)
 
     min_fraction_of_examples_in_queue = 0.4
