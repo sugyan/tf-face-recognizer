@@ -40,7 +40,7 @@ def eval_once(saver, top_k_op):
             coord.join(threads, stop_grace_period_secs=10)
 
 def main(argv=None):
-    files = [os.path.join(FLAGS.data_dir, 'test.tfrecords') for i in range(1, 2)]
+    files = [os.path.join(FLAGS.data_dir, 'test.tfrecords')]
     images, labels = v2.inputs(files, distort=False)
     logits = v2.inference(images)
     top_k_op = tf.nn.in_top_k(logits, labels, 1)

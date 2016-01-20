@@ -4,7 +4,7 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 100,
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 1000,
                             """number of examples for train""")
 
 IMAGE_SIZE = 112
