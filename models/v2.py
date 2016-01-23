@@ -32,10 +32,10 @@ def inputs(files, distort=False):
         image = tf.image.resize_image_with_crop_or_pad(image, framesize, framesize)
         image = tf.image.random_crop(image, [cropsize, cropsize])
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_brightness(image, max_delta=0.2)
-        image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
-        image = tf.image.random_hue(image, max_delta=0.02)
-        image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
+        image = tf.image.random_brightness(image, max_delta=0.4)
+        image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
+        image = tf.image.random_hue(image, max_delta=0.04)
+        image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
     else:
         image = tf.image.resize_image_with_crop_or_pad(image, INPUT_SIZE, INPUT_SIZE)
 
