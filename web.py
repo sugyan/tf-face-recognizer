@@ -19,7 +19,13 @@ logits = tf.nn.softmax(v2.inference(images))
 
 sess = tf.Session()
 variable_averages = tf.train.ExponentialMovingAverage(v2.MOVING_AVERAGE_DECAY)
-variables_to_restore = variable_averages.variables_to_restore()
+variables_to_restore = {}
+for v in tf.all_variables():
+    if v in tf.trainable_variables():
+        restore_name = variable_averages.average_name(v)
+    else:
+        restore_name = v.op.name
+    variables_to_restore[restore_name] = v
 saver = tf.train.Saver(variables_to_restore)
 if not os.path.isfile(FLAGS.checkpoint_path):
     print 'No checkpoint file found'
