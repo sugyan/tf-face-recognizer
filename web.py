@@ -56,5 +56,4 @@ def api():
     return jsonify(results=results)
 
 if __name__ == '__main__':
-    print FLAGS.port
     app.run(host='0.0.0.0', port=FLAGS.port)
