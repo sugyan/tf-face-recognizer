@@ -47,10 +47,10 @@ def api():
             decoded = tf.image.decode_jpeg(data, channels=3)
         if image.startswith('data:image/png;base64,'):
             decoded = tf.image.decode_png(data, channels=3)
-        decoded.set_shape(sess.run(decoded).shape)
+        decoded.set_shape(decoded.eval(session=tf.Session()).shape)
         resized = tf.image.resize_image_with_crop_or_pad(decoded, v2.INPUT_SIZE, v2.INPUT_SIZE)
         inputs = tf.image.per_image_whitening(resized)
-        inputs = sess.run(tf.expand_dims(inputs, 0))
+        inputs = tf.expand_dims(inputs, 0).eval(session=tf.Session())
         output = sess.run(logits, feed_dict={images: inputs})
         results.append(output.flatten().tolist())
     return jsonify(results=results)
