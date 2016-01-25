@@ -13,6 +13,8 @@ v2.BATCH_SIZE = 1
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
                            """Directory where to read model checkpoints.""")
+tf.app.flags.DEFINE_integer('port', 5000,
+                           """Application port.""")
 
 images = tf.placeholder(tf.float32, shape=(1, v2.INPUT_SIZE, v2.INPUT_SIZE, 3))
 logits = tf.nn.softmax(v2.inference(images))
@@ -52,3 +54,7 @@ def api():
         output = sess.run(logits, feed_dict={images: inputs})
         results.append(output.flatten().tolist())
     return jsonify(results=results)
+
+if __name__ == '__main__':
+    print FLAGS.port
+    app.run(host='0.0.0.0', port=FLAGS.port)

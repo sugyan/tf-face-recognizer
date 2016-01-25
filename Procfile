@@ -1,1 +1,1 @@
-web: gunicorn web:app --log-file=-
+web: python web.py --port $PORT
