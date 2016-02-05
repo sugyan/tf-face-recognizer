@@ -1,6 +1,7 @@
 from models import v2
 
 from flask import Flask, jsonify, request
+from flask.ext.sqlalchemy import SQLAlchemy
 import tensorflow as tf
 
 import base64
@@ -16,6 +17,22 @@ tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
 tf.app.flags.DEFINE_integer('port', 5000,
                            """Application port.""")
 
+# Flask setup
+app = Flask(__name__)
+app.debug = True
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+db = SQLAlchemy(app)
+db.create_all()
+
+class CheckPoint(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    data = db.Column(db.LargeBinary)
+
+    def __init__(self, id):
+        self.id = id
+
+# Logits setup
 images = tf.placeholder(tf.float32, shape=(1, v2.INPUT_SIZE, v2.INPUT_SIZE, 3))
 logits = tf.nn.softmax(v2.inference(images))
 
@@ -29,14 +46,13 @@ for v in tf.all_variables():
         restore_name = v.op.name
     variables_to_restore[restore_name] = v
 saver = tf.train.Saver(variables_to_restore)
+
 if not os.path.isfile(FLAGS.checkpoint_path):
     print 'No checkpoint file found'
-    urllib.urlretrieve(os.environ['DOWNLOAD_URL'], FLAGS.checkpoint_path + '.gz')
-    open(FLAGS.checkpoint_path, 'wb').write(gzip.open(FLAGS.checkpoint_path + '.gz').read())
-saver.restore(sess, FLAGS.checkpoint_path)
-
-app = Flask(__name__)
-app.debug = True
+    checkpoint = CheckPoint.query.get(1)
+    if checkpoint:
+        open(FLAGS.checkpoint_path, 'wb').write(checkpoint.data)
+        saver.restore(sess, FLAGS.checkpoint_path)
 
 @app.route('/', methods=['POST'])
 def api():
@@ -54,6 +70,18 @@ def api():
         output = sess.run(logits, feed_dict={images: inputs})
         results.append(output.flatten().tolist())
     return jsonify(results=results)
+
+@app.route('/checkpoint', methods=['POST'])
+def checkpoint():
+    checkpoint = CheckPoint.query.get(1)
+    if not checkpoint:
+        checkpoint = CheckPoint(1)
+        db.session.add(checkpoint)
+        db.session.commit()
+        checkpoint = CheckPoint.query.get(1)
+    checkpoint.data = request.files['file'].read()
+    db.session.commit()
+    return 'OK'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=FLAGS.port)
