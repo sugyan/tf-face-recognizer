@@ -53,6 +53,7 @@ if not os.path.isfile(FLAGS.checkpoint_path):
     if checkpoint:
         open(FLAGS.checkpoint_path, 'wb').write(checkpoint.data)
         saver.restore(sess, FLAGS.checkpoint_path)
+        print 'restored from database'
 
 @app.route('/', methods=['POST'])
 def api():
