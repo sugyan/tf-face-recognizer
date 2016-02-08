@@ -7,7 +7,6 @@ import tensorflow as tf
 import base64
 import urllib
 import os
-import gzip
 
 v2.BATCH_SIZE = 1
 
@@ -47,13 +46,16 @@ for v in tf.all_variables():
     variables_to_restore[restore_name] = v
 saver = tf.train.Saver(variables_to_restore)
 
-if not os.path.isfile(FLAGS.checkpoint_path):
+
+if os.path.isfile(FLAGS.checkpoint_path):
+    saver.restore(sess, FLAGS.checkpoint_path)
+else:
     print 'No checkpoint file found'
     checkpoint = CheckPoint.query.get(1)
     if checkpoint:
         open(FLAGS.checkpoint_path, 'wb').write(checkpoint.data)
         saver.restore(sess, FLAGS.checkpoint_path)
-        print 'restored from database'
+        del checkpoint
 
 @app.route('/', methods=['POST'])
 def api():
