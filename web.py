@@ -36,8 +36,8 @@ images = tf.placeholder(tf.float32, shape=(1, v2.INPUT_SIZE, v2.INPUT_SIZE, 3))
 logits = tf.nn.softmax(v2.inference(images))
 
 config = tf.ConfigProto(
-    inter_op_parallelism_threads=4,
-    intra_op_parallelism_threads=4,
+    inter_op_parallelism_threads=1,
+    intra_op_parallelism_threads=1,
 )
 sess = tf.Session(config=config)
 variable_averages = tf.train.ExponentialMovingAverage(v2.MOVING_AVERAGE_DECAY)
