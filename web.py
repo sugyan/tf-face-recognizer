@@ -35,7 +35,11 @@ class CheckPoint(db.Model):
 images = tf.placeholder(tf.float32, shape=(1, v2.INPUT_SIZE, v2.INPUT_SIZE, 3))
 logits = tf.nn.softmax(v2.inference(images))
 
-sess = tf.Session()
+config = tf.ConfigProto(
+    inter_op_parallelism_threads=4,
+    intra_op_parallelism_threads=4,
+)
+sess = tf.Session(config=config)
 variable_averages = tf.train.ExponentialMovingAverage(v2.MOVING_AVERAGE_DECAY)
 variables_to_restore = {}
 for v in tf.all_variables():
@@ -45,7 +49,6 @@ for v in tf.all_variables():
         restore_name = v.op.name
     variables_to_restore[restore_name] = v
 saver = tf.train.Saver(variables_to_restore)
-
 
 if os.path.isfile(FLAGS.checkpoint_path):
     saver.restore(sess, FLAGS.checkpoint_path)
