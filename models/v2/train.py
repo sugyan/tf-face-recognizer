@@ -1,4 +1,4 @@
-import os.path
+import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -20,7 +20,7 @@ tf.app.flags.DEFINE_integer('max_steps', 5000,
 def main(argv=None):
     global_step = tf.Variable(0, trainable=False)
 
-    files = [os.path.join(FLAGS.data_dir, 'data%d.tfrecords' % i) for i in range(1, 6)]
+    files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
     images, labels = v2.inputs(files, distort=True)
     logits = v2.inference(images)
     losses = v2.loss(logits, labels)

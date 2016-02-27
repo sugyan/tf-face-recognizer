@@ -42,10 +42,11 @@ def inputs(files, distort=False):
     min_fraction_of_examples_in_queue = 0.4
     min_queue_examples = int(FLAGS.num_examples_per_epoch_for_train * min_fraction_of_examples_in_queue)
     images, labels = tf.train.shuffle_batch(
-        [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int32)],
+        [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)],
         batch_size=BATCH_SIZE,
         capacity=min_queue_examples + 3 * BATCH_SIZE,
-        min_after_dequeue=min_queue_examples
+        min_after_dequeue=min_queue_examples,
+        num_threads=4
     )
     images = tf.image.resize_images(images, INPUT_SIZE, INPUT_SIZE)
     tf.image_summary('images', images)
@@ -124,12 +125,7 @@ def inference(images):
     return fc7
 
 def loss(logits, labels):
-    sparse_labels = tf.reshape(labels, [BATCH_SIZE, 1])
-    indices = tf.reshape(tf.range(BATCH_SIZE), [BATCH_SIZE, 1])
-    concated = tf.concat(1, [indices, sparse_labels])
-    dense_labels = tf.sparse_to_dense(concated, [BATCH_SIZE, NUM_CLASSES], 1.0, 0.0)
-
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, dense_labels)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels)
     mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
     tf.add_to_collection('losses', mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
