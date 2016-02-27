@@ -4,10 +4,10 @@ itsdangerous==0.24
 Jinja2==2.8
 MarkupSafe==0.23
 numpy==1.10.4
-protobuf==3.0.0a3
+protobuf==3.0.0b2
 psycopg2==2.6.1
 six==1.10.0
 SQLAlchemy==1.0.11
 Werkzeug==0.11.3
-wheel==0.26.0
-https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.0-py2-none-linux_x86_64.whl
+wheel==0.29.0
+https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-linux_x86_64.whl
