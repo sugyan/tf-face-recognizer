@@ -25,10 +25,9 @@ while True:
     url = results['page']['next']
     if not indexed:
         break
-zero = json.loads(urllib.urlopen(url_base + '/labels/-1.json').read())
 targets.append({
     'index': 0,
-    'sample': (zero['faces_count'] / 10) * 10
+    'sample': targets[0]['sample'] * 5
 })
 
 # download source data
