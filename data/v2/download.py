@@ -21,7 +21,7 @@ while True:
             indexed = True
             targets.append({
                 'index': index_number,
-                'sample': sample
+                'sample': int(sample)
             })
     url = results['page']['next']
     if not indexed:
