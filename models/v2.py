@@ -27,10 +27,7 @@ def inputs(files, distort=False):
     image.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
 
     if distort:
-        cropsize = random.randint(INPUT_SIZE, INPUT_SIZE + (IMAGE_SIZE - INPUT_SIZE) / 2)
-        framesize = INPUT_SIZE + (cropsize - INPUT_SIZE) * 2
-        image = tf.image.resize_image_with_crop_or_pad(image, framesize, framesize)
-        image = tf.random_crop(image, [cropsize, cropsize, 3])
+        image = tf.random_crop(image, [INPUT_SIZE, INPUT_SIZE, 3])
         image = tf.image.random_flip_left_right(image)
         image = tf.image.random_brightness(image, max_delta=0.4)
         image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
