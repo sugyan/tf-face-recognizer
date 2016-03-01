@@ -7,7 +7,7 @@ import os
 import json
 
 url_base = sys.argv[1]
-sample = sys.argv[2]
+sample = int(sys.argv[2])
 
 # config
 targets = []
@@ -21,7 +21,7 @@ while True:
             indexed = True
             targets.append({
                 'index': index_number,
-                'sample': int(sample)
+                'sample': sample
             })
     url = results['page']['next']
     if not indexed:
