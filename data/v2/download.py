@@ -7,6 +7,7 @@ import os
 import json
 
 url_base = sys.argv[1]
+sample = sys.argv[2]
 
 # config
 targets = []
@@ -20,14 +21,14 @@ while True:
             indexed = True
             targets.append({
                 'index': index_number,
-                'sample': (label['faces_count'] / 10) * 10
+                'sample': sample
             })
     url = results['page']['next']
     if not indexed:
         break
 targets.append({
     'index': 0,
-    'sample': targets[0]['sample'] * 5
+    'sample': sample * 5
 })
 
 # download source data
