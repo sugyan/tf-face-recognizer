@@ -9,7 +9,7 @@ import json
 url_base = sys.argv[1]
 
 # config
-targets = []
+targets, labels = [], {}
 samples = 0
 url = url_base + '.json'
 while True:
@@ -24,6 +24,7 @@ while True:
                 'sample': label['faces_count']
             })
             samples += label['faces_count']
+            labels[index_number] = label
     url = results['page']['next']
     if not indexed:
         break
@@ -32,10 +33,11 @@ targets.append({
     'sample': samples
 })
 
+# labels data
+with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), 'w') as f:
+    f.write(json.dumps(labels))
 # download source data
-samples = 0
 for target in targets:
-    samples += target['sample']
     params = urllib.urlencode({ 'sample': target['sample'] })
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
     filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
