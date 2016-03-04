@@ -10,7 +10,6 @@ url_base = sys.argv[1]
 
 # config
 targets, labels = [], {}
-samples = 0
 url = url_base + '.json'
 while True:
     results = json.loads(urllib.urlopen(url).read())
@@ -23,24 +22,25 @@ while True:
                 'index': index_number,
                 'sample': label['faces_count']
             })
-            samples += label['faces_count']
             labels[index_number] = label
     url = results['page']['next']
     if not indexed:
         break
 targets.append({
     'index': 0,
-    'sample': samples
+    'sample': targets[0]['sample'] * 3
 })
 
 # labels data
 with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), 'w') as f:
     f.write(json.dumps(labels))
 # download source data
+samples = 0
 for target in targets:
-    params = urllib.urlencode({ 'sample': target['sample'] })
-    url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
-    filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
-    print urllib.urlretrieve(url, filename)
+    samples += target['sample']
+    # params = urllib.urlencode({ 'sample': target['sample'] })
+    # url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
+    # filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
+    # print urllib.urlretrieve(url, filename)
 
-print samples * 2
+print samples
