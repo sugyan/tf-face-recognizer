@@ -38,9 +38,9 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
 samples = 0
 for target in targets:
     samples += target['sample']
-    # params = urllib.urlencode({ 'sample': target['sample'] })
-    # url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
-    # filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
-    # print urllib.urlretrieve(url, filename)
+    params = urllib.urlencode({ 'sample': target['sample'] })
+    url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
+    filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
+    print urllib.urlretrieve(url, filename)
 
 print samples
