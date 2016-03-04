@@ -17,8 +17,17 @@ tf.app.flags.DEFINE_string('train_dir', 'train',
 tf.app.flags.DEFINE_integer('max_steps', 5000,
                             """Number of batches to run.""")
 
+def labels_data():
+    filepath = os.path.join(os.path.join(FLAGS.data_dir, 'labels.json'))
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            return f.read()
+    else:
+        return '{}'
+
 def main(argv=None):
-    global_step = tf.Variable(0, trainable=False)
+    global_step = tf.Variable(0, trainable=False, name="global_step")
+    tf.Variable(labels_data(), trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
     images, labels = v2.inputs(files, distort=True)
