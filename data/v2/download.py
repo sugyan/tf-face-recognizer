@@ -10,7 +10,7 @@ url_base = sys.argv[1]
 
 # config
 targets, labels = [], {}
-url = url_base + '.json'
+url = url_base + '/root.json'
 while True:
     results = json.loads(urllib.urlopen(url).read())
     indexed = False
