@@ -16,6 +16,8 @@ tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('port', 5000,
                            """Application port.""")
+tf.app.flags.DEFINE_integer('top_k', 5,
+                           """Finds the k largest entries""")
 
 # Flask setup
 app = Flask(__name__)
@@ -33,8 +35,14 @@ class CheckPoint(db.Model):
         self.id = id
 
 # Logits setup
-images = tf.placeholder(tf.float32, shape=(1, v2.INPUT_SIZE, v2.INPUT_SIZE, 3))
-logits = tf.nn.softmax(v2.inference(images))
+input_data = tf.placeholder(tf.string)
+decoded = tf.image.decode_jpeg(input_data)
+resized = tf.image.resize_images(decoded, v2.INPUT_SIZE, v2.INPUT_SIZE)
+inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
+logits = v2.inference(inputs)
+outputs = tf.nn.softmax(logits)
+top_results = tf.nn.top_k(outputs, k=FLAGS.top_k)
+
 global_step = tf.Variable(0, name='global_step', trainable=False)
 labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
 
@@ -62,24 +70,13 @@ labels = json.loads(sess.run(labels))
 def api():
     results = []
     for image in request.form.getlist('images'):
-        data = base64.b64decode(image.split(',')[1])
-        if image.startswith('data:image/jpeg;base64,'):
-            decoded = tf.image.decode_jpeg(data, channels=3)
-        if image.startswith('data:image/png;base64,'):
-            decoded = tf.image.decode_png(data, channels=3)
-        decoded.set_shape(decoded.eval(session=tf.Session()).shape)
-        resized = tf.image.resize_image_with_crop_or_pad(decoded, v2.INPUT_SIZE, v2.INPUT_SIZE)
-        inputs = tf.image.per_image_whitening(resized)
-        inputs = tf.expand_dims(inputs, 0).eval(session=tf.Session())
-        output = sess.run(logits, feed_dict={images: inputs})
-        with tf.Session() as sess2:
-            values, indices = sess2.run(tf.nn.top_k(output, k=5))
-            result = []
-            for i in range(5):
-                result.append({
-                    'label': labels.get(str(indices.flatten().tolist()[i]), {}),
-                    'value': values.flatten().tolist()[i],
-                })
+        values, indices = sess.run(top_results, feed_dict={input_data:base64.b64decode(image.split(',')[1])})
+        result = []
+        for i in range(FLAGS.top_k):
+            result.append({
+                'label': labels.get(str(indices.flatten().tolist()[i]), {}),
+                'value': values.flatten().tolist()[i],
+            })
         results.append(result)
     return jsonify(results=results)
 
