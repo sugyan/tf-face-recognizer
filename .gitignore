@@ -61,6 +61,5 @@ target/
 venv/
 data/**/*.bin
 data/**/*.tfrecords
-node_modules/
-/static/js/*.js
-!static/js/jquery.min.js
+data/**/labels.json
+train/*
