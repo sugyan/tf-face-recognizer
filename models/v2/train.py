@@ -32,6 +32,7 @@ def restore_or_initialize(sess):
         for v in tf.all_variables():
             # don't restore "labels"!
             if v.name.startswith('labels:'):
+                sess.run(tf.initialize_variables([v]))
                 continue
             print 'restore variables "%s"' % v.name
             try:
