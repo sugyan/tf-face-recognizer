@@ -14,6 +14,8 @@ tf.app.flags.DEFINE_string('data_dir', 'data/v2/tfrecords',
                            """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
+tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
+                           """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('max_steps', 5000,
                             """Number of batches to run.""")
 
@@ -24,6 +26,23 @@ def labels_data():
             return f.read()
     else:
         return '{}'
+
+def restore_or_initialize(sess):
+    if os.path.exists(FLAGS.checkpoint_path):
+        for v in tf.all_variables():
+            # don't restore "labels"!
+            if v.name.startswith('labels:'):
+                next
+            print 'restore variables "%s"' % v.name
+            try:
+                restorer = tf.train.Saver([v])
+                restorer.restore(sess, FLAGS.checkpoint_path)
+            except Exception:
+                print 'could not restore, initialize!'
+                sess.run(tf.initialize_variables([v]))
+    else:
+        print 'initialize all variables'
+        sess.run(tf.initialize_all_variables())
 
 def main(argv=None):
     global_step = tf.Variable(0, trainable=False, name="global_step")
@@ -38,7 +57,7 @@ def main(argv=None):
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=21)
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph_def=sess.graph_def)
-        sess.run(tf.initialize_all_variables())
+        restore_or_initialize(sess)
 
         tf.train.start_queue_runners(sess=sess)
 
