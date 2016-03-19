@@ -51,7 +51,7 @@ def main(argv=None):
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
     images, labels = v2.inputs(files, distort=True)
-    logits = v2.inference(images)
+    logits = v2.inference(images, len(files))
     losses = v2.loss(logits, labels)
     train_op = v2.train(losses, global_step)
     summary_op = tf.merge_all_summaries()

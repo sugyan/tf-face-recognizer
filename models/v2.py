@@ -10,7 +10,6 @@ tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 1000,
 IMAGE_SIZE = 112
 INPUT_SIZE = 96
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
-NUM_CLASSES = int(os.environ.get('NUM_CLASSES', '5'))
 
 MOVING_AVERAGE_DECAY = 0.9999
 
@@ -49,7 +48,7 @@ def inputs(files, distort=False):
     tf.image_summary('images', images)
     return images, labels
 
-def inference(images):
+def inference(images, num_classes):
     def _variable_with_weight_decay(name, shape, stddev, wd):
         var = tf.get_variable(name, shape=shape, initializer=tf.truncated_normal_initializer(stddev=stddev))
         if wd:
@@ -114,8 +113,8 @@ def inference(images):
         _activation_summary(fc6)
 
     with tf.variable_scope('fc7') as scope:
-        weights = tf.get_variable('weights', shape=[256, NUM_CLASSES], initializer=tf.truncated_normal_initializer(stddev=0.02))
-        biases = tf.get_variable('biases', shape=[NUM_CLASSES], initializer=tf.constant_initializer(0.0))
+        weights = tf.get_variable('weights', shape=[256, num_classes], initializer=tf.truncated_normal_initializer(stddev=0.02))
+        biases = tf.get_variable('biases', shape=[num_classes], initializer=tf.constant_initializer(0.0))
         fc7 = tf.nn.bias_add(tf.matmul(fc6, weights), biases, name=scope.name)
         _activation_summary(fc7)
 
