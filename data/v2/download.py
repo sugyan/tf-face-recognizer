@@ -28,7 +28,7 @@ while True:
         break
 targets.append({
     'index': 0,
-    'sample': targets[0]['sample'] * 3
+    'sample': targets[0]['sample'] * 5
 })
 
 # labels data
@@ -38,7 +38,7 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
 samples = 0
 for target in targets:
     samples += target['sample']
-    params = urllib.urlencode({ 'sample': target['sample'] })
+    params = urllib.urlencode({ 'sample': 100 if target['sample'] > 100 else target['sample'] })
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], params)
     filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
     print urllib.urlretrieve(url, filename)
