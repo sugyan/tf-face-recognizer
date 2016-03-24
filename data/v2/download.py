@@ -8,6 +8,12 @@ import json
 
 url_base = sys.argv[1]
 
+# remove old records
+data_dir = os.path.join(os.path.dirname(__file__), 'tfrecords')
+for f in os.listdir(data_dir):
+    if f.endswith('.tfrecords'):
+        os.remove(os.path.join(data_dir, f))
+
 # config
 targets, labels = [], {}
 url = url_base + '/root.json'
@@ -31,7 +37,7 @@ while True:
         break
 targets.append({
     'index': 0,
-    'sample': samples / 10
+    'sample': samples / 2
 })
 
 # labels data
@@ -40,7 +46,7 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
 # download source data
 for target in targets:
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urllib.urlencode({ 'sample': target['sample'] }))
-    filename = os.path.join(os.path.dirname(__file__), 'tfrecords', '%03d.tfrecords' % target['index'])
+    filename = os.path.join(data_dir, '%03d.tfrecords' % target['index'])
     print urllib.urlretrieve(url, filename)
 
-print samples + samples / 10
+print samples + samples / 2
