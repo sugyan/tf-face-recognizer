@@ -36,7 +36,7 @@ labels_saver.restore(sess, FLAGS.checkpoint_path)
 labels = json.loads(sess.run(labels))
 
 input_data = tf.placeholder(tf.string)
-decoded = tf.image.decode_jpeg(input_data)
+decoded = tf.image.decode_jpeg(input_data, channels=3)
 resized = tf.image.resize_images(decoded, v2.INPUT_SIZE, v2.INPUT_SIZE)
 inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
 logits = v2.inference(inputs, len(labels.keys()) + 1)
