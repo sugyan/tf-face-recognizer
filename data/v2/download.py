@@ -24,7 +24,7 @@ for label in json.loads(urllib.urlopen(url).read()):
         samples += label['faces_count']
         targets.append({
             'index': index_number,
-            'sample': sample
+            'sample': label['faces_count']
         })
         labels[index_number] = label
 targets.append({
