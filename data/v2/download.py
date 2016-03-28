@@ -16,25 +16,19 @@ for f in os.listdir(data_dir):
 
 # config
 targets, labels = [], {}
-url = url_base + '/root.json'
+url = url_base + '/labels.json'
 samples = 0
-while True:
-    results = json.loads(urllib.urlopen(url).read())
-    indexed = False
-    for label in results['labels']:
-        index_number = label['index_number']
-        if index_number is not None:
-            indexed = True
-            sample = 100 if index_number > 0 and label['faces_count'] > 100 else label['faces_count']
-            samples += sample
-            targets.append({
-                'index': index_number,
-                'sample': sample
-            })
-            labels[index_number] = label
-    url = results['page']['next']
-    if not indexed:
-        break
+for label in json.loads(urllib.urlopen(url).read()):
+    index_number = label['index_number']
+    if index_number is not None:
+        indexed = True
+        sample = 100 if index_number > 0 and label['faces_count'] > 100 else label['faces_count']
+        samples += sample
+        targets.append({
+            'index': index_number,
+            'sample': sample
+        })
+        labels[index_number] = label
 targets.append({
     'index': 0,
     'sample': samples / 2
