@@ -21,8 +21,7 @@ samples = 0
 for label in json.loads(urllib.urlopen(url).read()):
     index_number = label['index_number']
     if index_number is not None:
-        indexed = True
-        samples += sample
+        samples += label['faces_count']
         targets.append({
             'index': index_number,
             'sample': sample
