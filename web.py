@@ -34,6 +34,7 @@ labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
 labels_saver = tf.train.Saver([labels])
 labels_saver.restore(sess, FLAGS.checkpoint_path)
 labels = json.loads(sess.run(labels))
+print '%d labels' % len(labels)
 
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
