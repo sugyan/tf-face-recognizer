@@ -30,7 +30,7 @@ for label in json.loads(urllib.urlopen(url).read()):
         labels[index_number] = label
 targets.append({
     'index': 0,
-    'sample': samples / 2
+    'sample': samples / 4
 })
 
 # labels data
@@ -42,4 +42,4 @@ for target in targets:
     filename = os.path.join(data_dir, '%03d.tfrecords' % target['index'])
     print urllib.urlretrieve(url, filename)
 
-print samples + samples / 2
+print samples + samples / 4
