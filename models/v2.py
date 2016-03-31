@@ -61,16 +61,16 @@ def inference(images, num_classes):
         tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
     with tf.variable_scope('conv1') as scope:
-        kernel = tf.get_variable('weights', shape=[3, 3, 3, 24], initializer=tf.truncated_normal_initializer(stddev=0.08))
+        kernel = tf.get_variable('weights', shape=[3, 3, 3, 32], initializer=tf.truncated_normal_initializer(stddev=0.08))
         conv = tf.nn.conv2d(images, kernel, [1, 1, 1, 1], padding='SAME')
-        biases = tf.get_variable('biases', shape=[24], initializer=tf.constant_initializer(0.0))
+        biases = tf.get_variable('biases', shape=[32], initializer=tf.constant_initializer(0.0))
         bias = tf.nn.bias_add(conv, biases)
         conv1 = tf.nn.relu(bias, name=scope.name)
         _activation_summary(conv1)
     pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool1')
 
     with tf.variable_scope('conv2') as scope:
-        kernel = tf.get_variable('weights', shape=[3, 3, 24, 48], initializer=tf.truncated_normal_initializer(stddev=0.08))
+        kernel = tf.get_variable('weights', shape=[3, 3, 32, 48], initializer=tf.truncated_normal_initializer(stddev=0.08))
         conv = tf.nn.conv2d(pool1, kernel, [1, 1, 1, 1], padding='SAME')
         biases = tf.get_variable('biases', shape=[48], initializer=tf.constant_initializer(0.0))
         bias = tf.nn.bias_add(conv, biases)
@@ -79,18 +79,18 @@ def inference(images, num_classes):
     pool2 = tf.nn.max_pool(conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool2')
 
     with tf.variable_scope('conv3') as scope:
-        kernel = tf.get_variable('weights', shape=[3, 3, 48, 96], initializer=tf.truncated_normal_initializer(stddev=0.08))
+        kernel = tf.get_variable('weights', shape=[3, 3, 48, 72], initializer=tf.truncated_normal_initializer(stddev=0.08))
         conv = tf.nn.conv2d(pool2, kernel, [1, 1, 1, 1], padding='SAME')
-        biases = tf.get_variable('biases', shape=[96], initializer=tf.constant_initializer(0.0))
+        biases = tf.get_variable('biases', shape=[72], initializer=tf.constant_initializer(0.0))
         bias = tf.nn.bias_add(conv, biases)
         conv3 = tf.nn.relu(bias, name=scope.name)
         _activation_summary(conv3)
     pool3 = tf.nn.max_pool(conv3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool3')
 
     with tf.variable_scope('conv4') as scope:
-        kernel = tf.get_variable('weights', shape=[3, 3, 96, 192], initializer=tf.truncated_normal_initializer(stddev=0.08))
+        kernel = tf.get_variable('weights', shape=[3, 3, 72, 108], initializer=tf.truncated_normal_initializer(stddev=0.08))
         conv = tf.nn.conv2d(pool3, kernel, [1, 1, 1, 1], padding='SAME')
-        biases = tf.get_variable('biases', shape=[192], initializer=tf.constant_initializer(0.0))
+        biases = tf.get_variable('biases', shape=[108], initializer=tf.constant_initializer(0.0))
         bias = tf.nn.bias_add(conv, biases)
         conv4 = tf.nn.relu(bias, name=scope.name)
         _activation_summary(conv4)
