@@ -39,6 +39,7 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
 for target in targets:
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urllib.urlencode({ 'sample': target['sample'] }))
     filename = os.path.join(data_dir, '%03d.tfrecords' % target['index'])
-    print urllib.urlretrieve(url, filename)
+    urllib.urlretrieve(url, filename)[0]
+    print '%s (%d bytes)' % (filename, os.stat(filename).st_size)
 
 print samples + samples / 4
