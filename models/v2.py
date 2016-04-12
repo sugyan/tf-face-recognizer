@@ -1,5 +1,4 @@
 import tensorflow as tf
-import random
 import os
 
 FLAGS = tf.app.flags.FLAGS
