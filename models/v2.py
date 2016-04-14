@@ -141,7 +141,7 @@ def train(total_loss, global_step):
     for var in tf.trainable_variables():
         tf.histogram_summary(var.op.name, var)
     for grad, var in grads:
-        if grad:
+        if grad is not None:
             tf.histogram_summary(var.op.name + '/gradients', grad)
 
     # Track the moving averages of all trainable variables
