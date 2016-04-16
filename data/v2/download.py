@@ -38,8 +38,10 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
 # download source data
 for target in targets:
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urllib.urlencode({ 'sample': target['sample'] }))
-    filename = os.path.join(data_dir, '%03d.tfrecords' % target['index'])
-    urllib.urlretrieve(url, filename)[0]
-    print '%s (%d bytes)' % (filename, os.stat(filename).st_size)
+    number = 0 if target['index'] == 0 else (target['index'] - 1) / 10 + 1
+    filename = os.path.join(data_dir, '%02d.tfrecords' % number)
+    with open(filename, 'ab') as f:
+        f.write(urllib.urlopen(url).read())
+    print '%s (%d: %d)' % (filename, target['index'], target['sample'])
 
 print samples + samples / 4

@@ -6,6 +6,7 @@ from models import v2
 from datetime import datetime
 import tensorflow as tf
 import numpy as np
+import json
 import time
 
 FLAGS = tf.app.flags.FLAGS
@@ -19,13 +20,10 @@ tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
 tf.app.flags.DEFINE_integer('max_steps', 5000,
                             """Number of batches to run.""")
 
-def labels_data():
+def labels_json():
     filepath = os.path.join(os.path.join(FLAGS.data_dir, 'labels.json'))
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            return f.read()
-    else:
-        return '{}'
+    with open(filepath, 'r') as f:
+        return f.read()
 
 def restore_or_initialize(sess):
     if os.path.exists(FLAGS.checkpoint_path):
@@ -46,12 +44,13 @@ def restore_or_initialize(sess):
         sess.run(tf.initialize_all_variables())
 
 def main(argv=None):
+    labels_data = labels_json()
     global_step = tf.Variable(0, trainable=False, name="global_step")
-    tf.Variable(labels_data(), trainable=False, name='labels')
+    tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
     images, labels = v2.inputs(files, distort=True)
-    logits = v2.inference(images, len(files))
+    logits = v2.inference(images, len(json.loads(labels_data)) + 1)
     losses = v2.loss(logits, labels)
     train_op = v2.train(losses, global_step)
     summary_op = tf.merge_all_summaries()
