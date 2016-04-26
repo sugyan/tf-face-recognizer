@@ -3,7 +3,7 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 1000,
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 3000,
                             """number of examples for train""")
 
 IMAGE_SIZE = 112
@@ -13,35 +13,43 @@ BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
 MOVING_AVERAGE_DECAY = 0.9999
 
 def inputs(files, distort=False):
-    fqueue = tf.train.string_input_producer(files)
-    reader = tf.TFRecordReader()
-    key, value = reader.read(fqueue)
-    features = tf.parse_single_example(value, features={
-        'label': tf.FixedLenFeature([], tf.int64),
-        'image_raw': tf.FixedLenFeature([], tf.string),
-    })
-    image = tf.image.decode_jpeg(features['image_raw'], channels=3)
-    image = tf.cast(image, tf.float32)
-    image.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
+    queues = {}
+    for i in range(len(files)):
+        key = i % 3
+        if key not in queues:
+            queues[key] = []
+        queues[key].append(files[i])
 
-    if distort:
-        image = tf.random_crop(image, [INPUT_SIZE, INPUT_SIZE, 3])
-        image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_brightness(image, max_delta=0.4)
-        image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
-        image = tf.image.random_hue(image, max_delta=0.04)
-        image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
-    else:
-        image = tf.image.resize_image_with_crop_or_pad(image, INPUT_SIZE, INPUT_SIZE)
+    def read_files(files):
+        fqueue = tf.train.string_input_producer(files)
+        reader = tf.TFRecordReader()
+        key, value = reader.read(fqueue)
+        features = tf.parse_single_example(value, features={
+            'label': tf.FixedLenFeature([], tf.int64),
+            'image_raw': tf.FixedLenFeature([], tf.string),
+        })
+        image = tf.image.decode_jpeg(features['image_raw'], channels=3)
+        image = tf.cast(image, tf.float32)
+        image.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
 
-    min_fraction_of_examples_in_queue = 0.4
-    min_queue_examples = int(FLAGS.num_examples_per_epoch_for_train * min_fraction_of_examples_in_queue)
-    images, labels = tf.train.shuffle_batch(
-        [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)],
+        if distort:
+            image = tf.random_crop(image, [INPUT_SIZE, INPUT_SIZE, 3])
+            image = tf.image.random_flip_left_right(image)
+            image = tf.image.random_brightness(image, max_delta=0.4)
+            image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
+            image = tf.image.random_hue(image, max_delta=0.04)
+            image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
+        else:
+            image = tf.image.resize_image_with_crop_or_pad(image, INPUT_SIZE, INPUT_SIZE)
+
+        return [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)]
+
+    min_queue_examples = FLAGS.num_examples_per_epoch_for_train
+    images, labels = tf.train.shuffle_batch_join(
+        [read_files(files) for files in queues.values()],
         batch_size=BATCH_SIZE,
         capacity=min_queue_examples + 3 * BATCH_SIZE,
-        min_after_dequeue=min_queue_examples,
-        num_threads=4
+        min_after_dequeue=min_queue_examples
     )
     images = tf.image.resize_images(images, INPUT_SIZE, INPUT_SIZE)
     tf.image_summary('images', images)
