@@ -20,7 +20,7 @@ samples = 0
 for label in json.loads(urllib.urlopen(url).read()):
     index_number = label['index_number']
     if index_number is not None:
-        sample = 100 if index_number > 0 and label['faces_count'] > 100 else label['faces_count']
+        sample = 120 if index_number > 0 and label['faces_count'] > 120 else label['faces_count']
         samples += sample
         targets.append({
             'index': index_number,
@@ -40,8 +40,14 @@ for target in targets:
     url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urllib.urlencode({ 'sample': target['sample'] }))
     number = 0 if target['index'] == 0 else (target['index'] - 1) / 10 + 1
     filename = os.path.join(data_dir, '%02d.tfrecords' % number)
-    with open(filename, 'ab') as f:
-        f.write(urllib.urlopen(url).read())
-    print '%s (%d: %d)' % (filename, target['index'], target['sample'])
+    if target['sample'] <= 60:
+        with open(filename, 'ab') as f:
+            f.write(urllib.urlopen(url).read())
+            f.write(urllib.urlopen(url).read())
+        print '%s (%d: %d x2)' % (filename, target['index'], target['sample'])
+    else:
+        with open(filename, 'ab') as f:
+            f.write(urllib.urlopen(url).read())
+        print '%s (%d: %d)' % (filename, target['index'], target['sample'])
 
 print samples + samples / 4
