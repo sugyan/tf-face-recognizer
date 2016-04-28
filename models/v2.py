@@ -3,7 +3,7 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 3000,
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 5000,
                             """number of examples for train""")
 
 IMAGE_SIZE = 112
@@ -15,7 +15,7 @@ MOVING_AVERAGE_DECAY = 0.9999
 def inputs(files, distort=False):
     queues = {}
     for i in range(len(files)):
-        key = i % 3
+        key = i % 5
         if key not in queues:
             queues[key] = []
         queues[key].append(files[i])
