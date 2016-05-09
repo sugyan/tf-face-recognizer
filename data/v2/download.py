@@ -29,7 +29,7 @@ for label in json.loads(urllib.urlopen(url).read()):
         labels[index_number] = label
 targets.append({
     'index': 0,
-    'sample': samples / 4
+    'sample': samples / 3
 })
 
 # labels data

@@ -17,7 +17,7 @@ tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('max_steps', 5000,
+tf.app.flags.DEFINE_integer('max_steps', 5001,
                             """Number of batches to run.""")
 
 def labels_json():
