@@ -28,16 +28,16 @@ def labels_json():
 def restore_or_initialize(sess):
     if os.path.exists(FLAGS.checkpoint_path):
         for v in tf.all_variables():
-            # don't restore "labels"!
-            if v.name.startswith('labels:'):
-                sess.run(tf.initialize_variables([v]))
-                continue
-            print 'restore variables "%s"' % v.name
-            try:
-                restorer = tf.train.Saver([v])
-                restorer.restore(sess, FLAGS.checkpoint_path)
-            except Exception:
-                print 'could not restore, initialize!'
+            if v in tf.trainable_variables() or "ExponentialMovingAverage" in v.name:
+                try:
+                    print 'restore variable "%s"' % v.name
+                    restorer = tf.train.Saver([v])
+                    restorer.restore(sess, FLAGS.checkpoint_path)
+                except Exception:
+                    print 'could not restore, initialize!'
+                    sess.run(tf.initialize_variables([v]))
+            else:
+                print 'initialize variable "%s"' % v.name
                 sess.run(tf.initialize_variables([v]))
     else:
         print 'initialize all variables'
@@ -45,14 +45,13 @@ def restore_or_initialize(sess):
 
 def main(argv=None):
     labels_data = labels_json()
-    global_step = tf.Variable(0, trainable=False, name="global_step")
     tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
     images, labels = v2.inputs(files, distort=True)
     logits = v2.inference(images, len(json.loads(labels_data)) + 1)
     losses = v2.loss(logits, labels)
-    train_op = v2.train(losses, global_step)
+    train_op = v2.train(losses)
     summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=21)
     with tf.Session() as sess:

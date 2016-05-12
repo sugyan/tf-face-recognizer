@@ -133,7 +133,7 @@ def loss(logits, labels):
     tf.add_to_collection('losses', mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
-def train(total_loss, global_step):
+def train(total_loss):
     loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
     losses = tf.get_collection('losses')
     loss_averages_op = loss_averages.apply(losses + [total_loss])
@@ -145,7 +145,7 @@ def train(total_loss, global_step):
     with tf.control_dependencies([loss_averages_op]):
         opt = tf.train.AdamOptimizer()
         grads = opt.compute_gradients(total_loss)
-    apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
+    apply_gradient_op = opt.apply_gradients(grads)
     for var in tf.trainable_variables():
         tf.histogram_summary(var.op.name, var)
     for grad, var in grads:
@@ -153,7 +153,7 @@ def train(total_loss, global_step):
             tf.histogram_summary(var.op.name + '/gradients', grad)
 
     # Track the moving averages of all trainable variables
-    variable_averages = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)
+    variable_averages = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY)
     variables_averages_op = variable_averages.apply(tf.trainable_variables())
 
     with tf.control_dependencies([apply_gradient_op, variables_averages_op]):
