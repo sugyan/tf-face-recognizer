@@ -1,4 +1,4 @@
-from models import v2
+import model
 
 from flask import Flask, jsonify, request
 import tensorflow as tf
@@ -8,7 +8,7 @@ import urllib
 import os
 import json
 
-v2.BATCH_SIZE = 1
+model.BATCH_SIZE = 1
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
@@ -38,14 +38,14 @@ print '%d labels' % len(labels)
 
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
-resized = tf.image.resize_images(decoded, v2.INPUT_SIZE, v2.INPUT_SIZE)
+resized = tf.image.resize_images(decoded, model.INPUT_SIZE, model.INPUT_SIZE)
 inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
-logits = v2.inference(inputs, len(labels.keys()) + 1)
+logits = model.inference(inputs, len(labels.keys()) + 1)
 outputs = tf.nn.softmax(logits)
 top_results = tf.nn.top_k(outputs, k=FLAGS.top_k)
 
 # restore model variables
-variable_averages = tf.train.ExponentialMovingAverage(v2.MOVING_AVERAGE_DECAY)
+variable_averages = tf.train.ExponentialMovingAverage(model.MOVING_AVERAGE_DECAY)
 variables_to_restore = variable_averages.variables_to_restore()
 saver = tf.train.Saver(variables_to_restore)
 saver.restore(sess, FLAGS.checkpoint_path)

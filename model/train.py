@@ -1,8 +1,8 @@
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from models import v2
+import model
 from datetime import datetime
 import tensorflow as tf
 import numpy as np
@@ -11,7 +11,7 @@ import time
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'data/v2/tfrecords',
+tf.app.flags.DEFINE_string('data_dir', 'data/tfrecords',
                            """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
@@ -48,10 +48,10 @@ def main(argv=None):
     tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
-    images, labels = v2.inputs(files, distort=True)
-    logits = v2.inference(images, len(json.loads(labels_data)) + 1)
-    losses = v2.loss(logits, labels)
-    train_op = v2.train(losses)
+    images, labels = model.inputs(files, distort=True)
+    logits = model.inference(images, len(json.loads(labels_data)) + 1)
+    losses = model.loss(logits, labels)
+    train_op = model.train(losses)
     summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=21)
     with tf.Session() as sess:
