@@ -29,7 +29,7 @@ def main(argv=None):
         'data-05.tfrecords',
     ]
     files = [os.path.join(FLAGS.data_dir, f) for f in filenames]
-    images, labels = model.inputs(files, distort=True)
+    images, labels = model.inputs(files)
     logits = model.inference(images, FLAGS.num_classes)
     losses = model.loss(logits, labels)
     train_op = model.train(losses)

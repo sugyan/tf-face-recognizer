@@ -12,7 +12,7 @@ BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '128'))
 
 MOVING_AVERAGE_DECAY = 0.9999
 
-def inputs(files, distort=False):
+def inputs(files):
     queues = {}
     for i in range(len(files)):
         key = i % 5
@@ -32,15 +32,13 @@ def inputs(files, distort=False):
         image = tf.cast(image, tf.float32)
         image.set_shape([IMAGE_SIZE, IMAGE_SIZE, 3])
 
-        if distort:
-            image = tf.random_crop(image, [INPUT_SIZE, INPUT_SIZE, 3])
-            image = tf.image.random_flip_left_right(image)
-            image = tf.image.random_brightness(image, max_delta=0.4)
-            image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
-            image = tf.image.random_hue(image, max_delta=0.04)
-            image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
-        else:
-            image = tf.image.resize_image_with_crop_or_pad(image, INPUT_SIZE, INPUT_SIZE)
+        # distort
+        image = tf.random_crop(image, [INPUT_SIZE, INPUT_SIZE, 3])
+        image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_brightness(image, max_delta=0.4)
+        image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
+        image = tf.image.random_hue(image, max_delta=0.04)
+        image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
 
         return [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)]
 

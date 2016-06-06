@@ -48,7 +48,7 @@ def main(argv=None):
     tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
-    images, labels = model.inputs(files, distort=True)
+    images, labels = model.inputs(files)
     logits = model.inference(images, len(json.loads(labels_data)) + 1)
     losses = model.loss(logits, labels)
     train_op = model.train(losses)
