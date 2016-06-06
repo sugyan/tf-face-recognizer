@@ -47,6 +47,7 @@ def main(argv=None):
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
     saver = tf.train.Saver(tf.all_variables())
 
+    num_samples = 1200
     with tf.Session() as sess:
         tf.train.start_queue_runners(sess=sess)
 
@@ -56,11 +57,10 @@ def main(argv=None):
             saver.restore(sess, checkpoint)
 
             true_count = 0
-            # 100 x 12 = 1200
-            for i in range(12):
+            for i in range(num_samples / 100):
                 predictions = sess.run(top_k_op)
                 true_count += np.sum(predictions)
-            precision = float(true_count) / 1200
+            precision = float(true_count) / num_samples
             print('precision: %.5f' % precision)
 
 

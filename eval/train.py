@@ -15,8 +15,10 @@ tf.app.flags.DEFINE_string('data_dir', 'eval/data/tfrecords',
                            """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 7001,
+tf.app.flags.DEFINE_integer('max_steps', 8001,
                             """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('num_classes', 40,
+                            """number of class""")
 
 def main(argv=None):
     filenames = [
@@ -28,11 +30,11 @@ def main(argv=None):
     ]
     files = [os.path.join(FLAGS.data_dir, f) for f in filenames]
     images, labels = model.inputs(files, distort=True)
-    logits = model.inference(images, 40)
+    logits = model.inference(images, FLAGS.num_classes)
     losses = model.loss(logits, labels)
     train_op = model.train(losses)
     summary_op = tf.merge_all_summaries()
-    saver = tf.train.Saver(tf.all_variables(), max_to_keep=36)
+    saver = tf.train.Saver(tf.all_variables(), max_to_keep=41)
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph=sess.graph)
         sess.run(tf.initialize_all_variables())
