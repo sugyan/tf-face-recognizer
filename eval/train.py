@@ -15,7 +15,7 @@ tf.app.flags.DEFINE_string('data_dir', 'eval/data/tfrecords',
                            """Path to the TFRecord data directory.""")
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 5001,
+tf.app.flags.DEFINE_integer('max_steps', 7001,
                             """Number of batches to run.""")
 
 def main(argv=None):
@@ -32,7 +32,7 @@ def main(argv=None):
     losses = model.loss(logits, labels)
     train_op = model.train(losses)
     summary_op = tf.merge_all_summaries()
-    saver = tf.train.Saver(tf.all_variables(), max_to_keep=26)
+    saver = tf.train.Saver(tf.all_variables(), max_to_keep=36)
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph=sess.graph)
         sess.run(tf.initialize_all_variables())
