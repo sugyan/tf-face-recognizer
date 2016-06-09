@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-import model
+from model.recognizer import Recognizer
 from datetime import datetime
 import tensorflow as tf
 import numpy as np
@@ -30,28 +30,29 @@ def restore_or_initialize(sess):
         for v in tf.all_variables():
             if v in tf.trainable_variables() or "ExponentialMovingAverage" in v.name:
                 try:
-                    print 'restore variable "%s"' % v.name
+                    print('restore variable "%s"' % v.name)
                     restorer = tf.train.Saver([v])
                     restorer.restore(sess, FLAGS.checkpoint_path)
                 except Exception:
-                    print 'could not restore, initialize!'
+                    print('could not restore, initialize!')
                     sess.run(tf.initialize_variables([v]))
             else:
-                print 'initialize variable "%s"' % v.name
+                print('initialize variable "%s"' % v.name)
                 sess.run(tf.initialize_variables([v]))
     else:
-        print 'initialize all variables'
+        print('initialize all variables')
         sess.run(tf.initialize_all_variables())
 
 def main(argv=None):
+    r = Recognizer()
     labels_data = labels_json()
     tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
-    images, labels = model.inputs(files)
-    logits = model.inference(images, len(json.loads(labels_data)) + 1)
-    losses = model.loss(logits, labels)
-    train_op = model.train(losses)
+    images, labels = r.inputs(files)
+    logits = r.inference(images, len(json.loads(labels_data)) + 1)
+    losses = r.loss(logits, labels)
+    train_op = r.train(losses)
     summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=21)
     with tf.Session() as sess:
@@ -68,7 +69,7 @@ def main(argv=None):
             assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
             format_str = '%s: step %d, loss = %.5f (%.3f sec/batch)'
-            print format_str % (datetime.now(), step, loss_value, duration)
+            print(format_str % (datetime.now(), step, loss_value, duration))
 
             if step % 100 == 0:
                 summary_str = sess.run(summary_op)

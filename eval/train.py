@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-import model
+from model.recognizer import Recognizer
 from datetime import datetime
 import tensorflow as tf
 import numpy as np
@@ -21,6 +21,7 @@ tf.app.flags.DEFINE_integer('num_classes', 40,
                             """number of class""")
 
 def main(argv=None):
+    r = Recognizer()
     filenames = [
         'data-01.tfrecords',
         'data-02.tfrecords',
@@ -29,10 +30,10 @@ def main(argv=None):
         'data-05.tfrecords',
     ]
     files = [os.path.join(FLAGS.data_dir, f) for f in filenames]
-    images, labels = model.inputs(files)
-    logits = model.inference(images, FLAGS.num_classes)
-    losses = model.loss(logits, labels)
-    train_op = model.train(losses)
+    images, labels = r.inputs(files, num_examples_per_epoch_for_train=6000)
+    logits = r.inference(images, FLAGS.num_classes)
+    losses = r.loss(logits, labels)
+    train_op = r.train(losses)
     summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=41)
     with tf.Session() as sess:

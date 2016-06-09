@@ -1,4 +1,4 @@
-import model
+from model.recognizer import Recognizer
 
 from flask import Flask, jsonify, request
 import tensorflow as tf
@@ -8,7 +8,7 @@ import urllib
 import os
 import json
 
-model.BATCH_SIZE = 1
+r = Recognizer(batch_size=1)
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
@@ -19,7 +19,7 @@ tf.app.flags.DEFINE_integer('top_k', 5,
                            """Finds the k largest entries""")
 
 if not os.path.isfile(FLAGS.checkpoint_path):
-    print 'No checkpoint file found'
+    print('No checkpoint file found')
     urllib.urlretrieve(os.environ['CHECKPOINT_DOWNLOAD_URL'], FLAGS.checkpoint_path)
 
 # Flask setup
@@ -34,18 +34,18 @@ labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
 labels_saver = tf.train.Saver([labels])
 labels_saver.restore(sess, FLAGS.checkpoint_path)
 labels = json.loads(sess.run(labels))
-print '%d labels' % len(labels)
+print('%d labels' % len(labels))
 
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
-resized = tf.image.resize_images(decoded, model.INPUT_SIZE, model.INPUT_SIZE)
+resized = tf.image.resize_images(decoded, r.INPUT_SIZE, r.INPUT_SIZE)
 inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
-logits = model.inference(inputs, len(labels.keys()) + 1)
+logits = r.inference(inputs, len(labels.keys()) + 1)
 outputs = tf.nn.softmax(logits)
 top_results = tf.nn.top_k(outputs, k=FLAGS.top_k)
 
 # restore model variables
-variable_averages = tf.train.ExponentialMovingAverage(model.MOVING_AVERAGE_DECAY)
+variable_averages = tf.train.ExponentialMovingAverage(r.MOVING_AVERAGE_DECAY)
 variables_to_restore = variable_averages.variables_to_restore()
 saver = tf.train.Saver(variables_to_restore)
 saver.restore(sess, FLAGS.checkpoint_path)

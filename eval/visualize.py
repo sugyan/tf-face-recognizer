@@ -1,18 +1,18 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-os.environ['BATCH_SIZE'] = '100'
 
-import model
+from model.recognizer import Recognizer
 import tensorflow as tf
 from eval import inputs
 
 FLAGS = tf.app.flags.FLAGS
 
 def main(argv=None):
+    r = Recognizer()
     filepath = os.path.join(FLAGS.data_dir, 'data-00.tfrecords')
     images, labels = inputs([filepath])
-    logits = model.inference(images, FLAGS.num_classes)
+    logits = r.inference(images, FLAGS.num_classes)
     saver = tf.train.Saver(tf.all_variables())
 
     checkpoint = tf.train.latest_checkpoint(FLAGS.train_dir)
