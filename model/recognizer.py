@@ -90,9 +90,9 @@ class Recognizer:
         pool3 = tf.nn.max_pool(conv3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool3')
 
         with tf.variable_scope('conv4') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 72, 108], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable('weights', shape=[3, 3, 72, 72], initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(pool3, kernel, [1, 1, 1, 1], padding='SAME')
-            biases = tf.get_variable('biases', shape=[108], initializer=tf.constant_initializer(0.0))
+            biases = tf.get_variable('biases', shape=[72], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
             conv4 = tf.nn.relu(bias, name=scope.name)
             _activation_summary(conv4)
@@ -103,19 +103,19 @@ class Recognizer:
             for d in pool4.get_shape()[1:].as_list():
                 dim *= d
             reshape = tf.reshape(pool4, [self.batch_size, dim])
-            weights = _variable_with_weight_decay('weights', shape=[dim, 1024], stddev=0.02, wd=0.005)
-            biases = tf.get_variable('biases', shape=[1024], initializer=tf.constant_initializer(0.0))
+            weights = _variable_with_weight_decay('weights', shape=[dim, 96], stddev=0.02, wd=0.005)
+            biases = tf.get_variable('biases', shape=[96], initializer=tf.constant_initializer(0.0))
             fc5 = tf.nn.relu(tf.nn.bias_add(tf.matmul(reshape, weights), biases), name=scope.name)
             _activation_summary(fc5)
 
         with tf.variable_scope('fc6') as scope:
-            weights = _variable_with_weight_decay('weights', shape=[1024, 256], stddev=0.02, wd=0.005)
-            biases = tf.get_variable('biases', shape=[256], initializer=tf.constant_initializer(0.0))
+            weights = _variable_with_weight_decay('weights', shape=[96, 128], stddev=0.02, wd=0.005)
+            biases = tf.get_variable('biases', shape=[128], initializer=tf.constant_initializer(0.0))
             fc6 = tf.nn.relu(tf.nn.bias_add(tf.matmul(fc5, weights), biases), name=scope.name)
             _activation_summary(fc6)
 
         with tf.variable_scope('fc7') as scope:
-            weights = tf.get_variable('weights', shape=[256, num_classes], initializer=tf.truncated_normal_initializer(stddev=0.02))
+            weights = tf.get_variable('weights', shape=[128, num_classes], initializer=tf.truncated_normal_initializer(stddev=0.02))
             biases = tf.get_variable('biases', shape=[num_classes], initializer=tf.constant_initializer(0.0))
             fc7 = tf.nn.bias_add(tf.matmul(fc6, weights), biases, name=scope.name)
             _activation_summary(fc7)
