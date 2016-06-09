@@ -37,11 +37,10 @@ def main(argv=None):
     summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=41)
     with tf.Session() as sess:
-        summary_writer = tf.train.SummaryWriter('train', graph=sess.graph)
-        sess.run(tf.initialize_all_variables())
-
         tf.train.start_queue_runners(sess=sess)
+        summary_writer = tf.train.SummaryWriter('train', graph=sess.graph)
 
+        sess.run(tf.initialize_all_variables())
         for step in range(FLAGS.max_steps):
             start_time = time.time()
             _, loss_value = sess.run([train_op, losses])
