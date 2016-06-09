@@ -63,3 +63,4 @@ data/**/*.bin
 data/**/*.tfrecords
 data/**/labels.json
 train/*
+images/*.png
