@@ -20,7 +20,6 @@ def main(argv=None):
 
     checkpoint = tf.train.latest_checkpoint(FLAGS.train_dir)
     with tf.Session() as sess:
-        tf.train.start_queue_runners(sess=sess)
         saver.restore(sess, checkpoint)
 
         zeros = []
@@ -29,7 +28,7 @@ def main(argv=None):
             {'name': 'pool1:0', 'row': 4, 'col':  8},
             {'name': 'pool2:0', 'row': 6, 'col':  8},
             {'name': 'pool3:0', 'row': 6, 'col': 12},
-            {'name': 'pool4:0', 'row': 9, 'col': 12},
+            {'name': 'pool4:0', 'row': 6, 'col': 12},
         ]
         for target in targets:
             t = sess.graph.get_tensor_by_name(target['name'])
@@ -45,6 +44,7 @@ def main(argv=None):
                 img = tf.image.convert_image_dtype(1 - out, tf.uint8, saturate=True)
                 tensors.append(tf.image.encode_png(img, name=t.op.name + '-%02d' % i))
 
+        tf.train.start_queue_runners(sess=sess)
         results = sess.run(tensors)
         for i in range(len(tensors)):
             filename = tensors[i].op.name + '.png'
