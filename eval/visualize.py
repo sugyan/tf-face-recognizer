@@ -35,14 +35,14 @@ def main(argv=None):
             t = sess.graph.get_tensor_by_name(target['name'])
             outputs = tf.split(0, r.batch_size, t)
             for i in range(len(outputs)):
-                shape = t.get_shape()
-                maps = [tf.concat(2, [x, tf.ones([1, int(shape[1]), 1, 1])]) for x in tf.split(3, shape[3], outputs[i])]
+                shape = t.get_shape().as_list()
+                maps = [tf.image.resize_image_with_crop_or_pad(1 - x, shape[1] + 2, shape[2] + 2) for x in tf.split(2, shape[3], tf.squeeze(outputs[i], [0]))]
                 rows = []
                 cols = target['col']
                 for row in range(target['row']):
-                    rows.append(tf.concat(2, maps[cols * row:cols * (row + 1)]))
-                out = tf.concat(1, [tf.concat(1, [x, tf.ones([1, 1, (int(shape[2]) + 1) * cols, 1])]) for x in rows])
-                img = tf.image.convert_image_dtype(tf.squeeze(out, [0]), tf.uint8, saturate=True)
+                    rows.append(tf.concat(1, maps[cols * row:cols * (row + 1)]))
+                out = tf.concat(0, rows)
+                img = tf.image.convert_image_dtype(1 - out, tf.uint8, saturate=True)
                 tensors.append(tf.image.encode_png(img, name=t.op.name + '-%02d' % i))
 
         results = sess.run(tensors)
