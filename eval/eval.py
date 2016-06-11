@@ -23,10 +23,10 @@ def inputs(files, batch_size=128, original_image_size=112, cropped_image_size=96
         'label': tf.FixedLenFeature([], tf.int64),
         'image_raw': tf.FixedLenFeature([], tf.string),
     })
-    image = tf.image.decode_jpeg(features['image_raw'], channels=3)
+    image = tf.image.decode_jpeg(features['image_raw'], channels=1)
     shape = tf.shape(image)
     image = tf.image.convert_image_dtype(image, tf.float32)
-    image.set_shape([original_image_size, original_image_size, 3])
+    image.set_shape([original_image_size, original_image_size, 1])
     image = tf.image.resize_image_with_crop_or_pad(image, cropped_image_size, cropped_image_size)
     images, labels = tf.train.batch(
         [tf.image.per_image_whitening(image), features['label']], batch_size
