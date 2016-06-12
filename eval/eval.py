@@ -14,6 +14,8 @@ tf.app.flags.DEFINE_string('train_dir', 'train',
                            """Directory where to write event logs and checkpoint.""")
 tf.app.flags.DEFINE_integer('num_classes', 40,
                             """number of class""")
+tf.app.flags.DEFINE_integer('image_size', 96,
+                            """size of input image""")
 
 def inputs(files, batch_size=128, original_image_size=112, cropped_image_size=96, image_size=96):
     fqueue = tf.train.string_input_producer(files)
@@ -36,7 +38,7 @@ def inputs(files, batch_size=128, original_image_size=112, cropped_image_size=96
 def main(argv=None):
     r = Recognizer(batch_size=100)
     filepath = os.path.join(FLAGS.data_dir, 'data-00.tfrecords')
-    images, labels = inputs([filepath], batch_size=r.batch_size)
+    images, labels = inputs([filepath], batch_size=r.batch_size, image_size=FLAGS.image_size)
     logits = r.inference(images, FLAGS.num_classes)
     top_k_op = tf.nn.in_top_k(logits, labels, 1)
     saver = tf.train.Saver(tf.all_variables())

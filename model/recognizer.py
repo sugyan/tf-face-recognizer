@@ -3,6 +3,7 @@ import os
 
 class Recognizer:
     IMAGE_SIZE = 112
+    CROP_SIZE  = 96
     INPUT_SIZE = 96
     MOVING_AVERAGE_DECAY = 0.9999
 
@@ -30,7 +31,7 @@ class Recognizer:
             image.set_shape([Recognizer.IMAGE_SIZE, Recognizer.IMAGE_SIZE, 3])
 
             # distort
-            image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 3])
+            image = tf.random_crop(image, [Recognizer.CROP_SIZE, Recognizer.CROP_SIZE, 3])
             image = tf.image.random_flip_left_right(image)
             image = tf.image.random_brightness(image, max_delta=0.4)
             image = tf.image.random_contrast(image, lower=0.6, upper=1.4)

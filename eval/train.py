@@ -21,6 +21,7 @@ tf.app.flags.DEFINE_integer('num_classes', 40,
                             """number of class""")
 
 def main(argv=None):
+    Recognizer.INPUT_SIZE = 96
     r = Recognizer()
     filenames = [
         'data-01.tfrecords',
