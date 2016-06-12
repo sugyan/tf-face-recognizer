@@ -25,17 +25,17 @@ class Recognizer:
                 'label': tf.FixedLenFeature([], tf.int64),
                 'image_raw': tf.FixedLenFeature([], tf.string),
             })
-            image = tf.image.decode_jpeg(features['image_raw'], channels=1)
+            image = tf.image.decode_jpeg(features['image_raw'], channels=3)
             image = tf.cast(image, tf.float32)
-            image.set_shape([Recognizer.IMAGE_SIZE, Recognizer.IMAGE_SIZE, 1])
+            image.set_shape([Recognizer.IMAGE_SIZE, Recognizer.IMAGE_SIZE, 3])
 
             # distort
-            image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 1])
+            image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 3])
             image = tf.image.random_flip_left_right(image)
             image = tf.image.random_brightness(image, max_delta=0.4)
             image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
-            # image = tf.image.random_hue(image, max_delta=0.04)
-            # image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
+            image = tf.image.random_hue(image, max_delta=0.04)
+            image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
 
             return [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)]
 
@@ -63,7 +63,7 @@ class Recognizer:
             tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
         with tf.variable_scope('conv1') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 1, 32], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable('weights', shape=[3, 3, 3, 32], initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(images, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.get_variable('biases', shape=[32], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
