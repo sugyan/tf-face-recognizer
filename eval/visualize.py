@@ -28,7 +28,7 @@ def main(argv=None):
             {'name': 'pool1:0', 'row':  5, 'col':  8},
             {'name': 'pool2:0', 'row':  5, 'col': 12},
             {'name': 'pool3:0', 'row':  6, 'col': 15},
-            {'name': 'pool4:0', 'row':  5, 'col': 12},
+            {'name': 'pool4:0', 'row':  6, 'col': 15},
         ]
         for target in targets:
             t = sess.graph.get_tensor_by_name(target['name'])

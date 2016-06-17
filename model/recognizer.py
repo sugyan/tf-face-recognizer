@@ -90,9 +90,9 @@ class Recognizer:
         pool3 = tf.nn.max_pool(conv3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool3')
 
         with tf.variable_scope('conv4') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 90, 60], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable('weights', shape=[3, 3, 90, 90], initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(pool3, kernel, [1, 1, 1, 1], padding='SAME')
-            biases = tf.get_variable('biases', shape=[60], initializer=tf.constant_initializer(0.0))
+            biases = tf.get_variable('biases', shape=[90], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
             conv4 = tf.nn.relu(bias, name=scope.name)
             _activation_summary(conv4)
