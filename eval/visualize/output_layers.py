@@ -1,9 +1,10 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from model.recognizer import Recognizer
 import tensorflow as tf
+from model.recognizer import Recognizer
 from eval import inputs
 
 FLAGS = tf.app.flags.FLAGS
@@ -49,7 +50,7 @@ def main(argv=None):
         for i in range(len(tensors)):
             filename = tensors[i].op.name + '.png'
             print('write %s' % filename)
-            with open(os.path.join(os.path.dirname(__file__), '..', FLAGS.images_dir, filename), 'wb') as f:
+            with open(os.path.join(os.path.dirname(__file__), '..', '..', FLAGS.images_dir, filename), 'wb') as f:
                 f.write(results[i])
 
 if __name__ == '__main__':
