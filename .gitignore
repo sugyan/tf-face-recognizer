@@ -62,5 +62,7 @@ venv/
 data/**/*.bin
 data/**/*.tfrecords
 data/**/labels.json
+eval/data/**/*.tfrecords
+eval/data/faces.json
 train/*
 images/*.png
