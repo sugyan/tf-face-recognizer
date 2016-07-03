@@ -20,7 +20,6 @@ def main(argv=None):
     # input variable
     with tf.variable_scope('input') as scope:
         v = tf.get_variable('input', shape=(96, 96, 3), initializer=tf.random_uniform_initializer(0.0, 1.0))
-    add_noise = v.assign(tf.add(v, tf.random_uniform(v.get_shape(), -0.1, 0.1)))
     # per_image_whitening without relu
     image = tf.mul(tf.clip_by_value(v, 0.0, 1.0), 255.5)
     mean, variance = tf.nn.moments(image, [0, 1, 2])
@@ -46,11 +45,9 @@ def main(argv=None):
         sess.run(tf.initialize_all_variables())
         saver.restore(sess, checkpoint)
 
-        for step in range(5000):
+        for step in range(2000):
             _, loss_value, softmax_value = sess.run([train_op, losses, softmax])
             print('%04d - loss: %f (%f)' % (step, loss_value[0], softmax_value.flatten().tolist()[FLAGS.target_class]))
-            if step % 200 == 0:
-                sess.run(add_noise)
 
         # write image to file
         output_image = tf.image.convert_image_dtype(v, tf.uint8, saturate=True)
