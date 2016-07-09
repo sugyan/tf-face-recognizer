@@ -45,7 +45,7 @@ def main(argv=None):
         sess.run(tf.initialize_all_variables())
         saver.restore(sess, checkpoint)
 
-        for step in range(2000):
+        for step in range(1000):
             _, loss_value, softmax_value = sess.run([train_op, losses, softmax])
             print('%04d - loss: %f (%f)' % (step, loss_value[0], softmax_value.flatten().tolist()[FLAGS.target_class]))
 
