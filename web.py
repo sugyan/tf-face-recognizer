@@ -33,7 +33,7 @@ sess = tf.Session()
 labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
 labels_saver = tf.train.Saver([labels])
 labels_saver.restore(sess, FLAGS.checkpoint_path)
-labels = json.loads(sess.run(labels))
+labels = json.loads(sess.run(labels).decode())
 print('%d labels' % len(labels))
 
 input_data = tf.placeholder(tf.string)
@@ -41,8 +41,8 @@ decoded = tf.image.decode_jpeg(input_data, channels=3)
 resized = tf.image.resize_images(decoded, r.INPUT_SIZE, r.INPUT_SIZE)
 inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
 logits = r.inference(inputs, len(labels.keys()) + 1)
-outputs = tf.nn.softmax(logits)
-top_results = tf.nn.top_k(outputs, k=FLAGS.top_k)
+fc6 = tf.get_default_graph().get_tensor_by_name('fc6/fc6:0')
+top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
 
 # restore model variables
 variable_averages = tf.train.ExponentialMovingAverage(r.MOVING_AVERAGE_DECAY)
@@ -53,11 +53,19 @@ saver.restore(sess, FLAGS.checkpoint_path)
 @app.route('/', methods=['POST'])
 def api():
     results = []
+    ops = [top_values, top_indices]
+    if 'fc6' in request.form:
+        ops.append(fc6)
     for image in request.form.getlist('images'):
-        values, indices = sess.run(top_results, feed_dict={input_data:base64.b64decode(image.split(',')[1])})
-        result = []
+        outputs = sess.run(ops, feed_dict={input_data:base64.b64decode(image.split(',')[1])})
+        values, indices = outputs[0:2]
+        result = {
+            'top': []
+        }
+        if len(outputs) > 2:
+            result['fc6'] = outputs[2].flatten().tolist()
         for i in range(FLAGS.top_k):
-            result.append({
+            result['top'].append({
                 'label': labels.get(str(indices.flatten().tolist()[i]), {}),
                 'value': values.flatten().tolist()[i],
             })
