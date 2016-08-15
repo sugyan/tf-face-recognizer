@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request
 import tensorflow as tf
 
 import base64
-import urllib
+import urllib.request
 import os
 import json
 
@@ -20,7 +20,7 @@ tf.app.flags.DEFINE_integer('top_k', 5,
 
 if not os.path.isfile(FLAGS.checkpoint_path):
     print('No checkpoint file found')
-    urllib.urlretrieve(os.environ['CHECKPOINT_DOWNLOAD_URL'], FLAGS.checkpoint_path)
+    urllib.request.urlretrieve(os.environ['CHECKPOINT_DOWNLOAD_URL'], FLAGS.checkpoint_path)
 
 # Flask setup
 app = Flask(__name__)
