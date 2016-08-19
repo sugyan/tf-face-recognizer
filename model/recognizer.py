@@ -37,7 +37,7 @@ class Recognizer:
             image = tf.image.random_hue(image, max_delta=0.04)
             image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
 
-            return [tf.image.per_image_whitening(image), tf.cast(features['label'], tf.int64)]
+            return [tf.image.per_image_whitening(image), features['label']]
 
         min_queue_examples = num_examples_per_epoch_for_train
         images, labels = tf.train.shuffle_batch_join(
