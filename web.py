@@ -50,6 +50,10 @@ variables_to_restore = variable_averages.variables_to_restore()
 saver = tf.train.Saver(variables_to_restore)
 saver.restore(sess, FLAGS.checkpoint_path)
 
+@app.route('/labels')
+def label():
+    return jsonify(labels=labels)
+
 @app.route('/', methods=['POST'])
 def api():
     results = []
