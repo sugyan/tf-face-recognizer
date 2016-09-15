@@ -27,7 +27,6 @@ class Recognizer:
             })
             image = tf.image.decode_jpeg(features['image_raw'], channels=3)
             image = tf.cast(image, tf.float32)
-            image.set_shape([Recognizer.IMAGE_SIZE, Recognizer.IMAGE_SIZE, 3])
 
             # distort
             image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 3])
