@@ -117,7 +117,6 @@ class Recognizer:
             weights = tf.get_variable('weights', shape=[150, num_classes], initializer=tf.truncated_normal_initializer(stddev=0.02))
             biases = tf.get_variable('biases', shape=[num_classes], initializer=tf.constant_initializer(0.0))
             fc7 = tf.nn.bias_add(tf.matmul(fc6, weights), biases, name=scope.name)
-            _activation_summary(fc7)
 
         return fc7
 
