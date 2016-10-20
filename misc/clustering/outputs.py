@@ -13,12 +13,12 @@ INPUT_IMAGE_SIZE = 96
 
 r = Recognizer(batch_size=1)
 
-with tf.Session() as sess:
-    labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
-    tf.train.Saver([labels]).restore(sess, FLAGS.checkpoint_path)
-    num_classes = len(json.loads(sess.run(labels).decode())) + 1
-
 def main(argv=None):
+    with tf.Session() as sess:
+        labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
+        tf.train.Saver([labels]).restore(sess, FLAGS.checkpoint_path)
+        num_classes = len(json.loads(sess.run(labels).decode())) + 1
+
     data = tf.placeholder(tf.string)
     image = tf.image.decode_jpeg(data, channels=3)
     image = tf.image.resize_image_with_crop_or_pad(image, INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE)
@@ -36,7 +36,7 @@ def main(argv=None):
 
         dirname = os.path.join(os.path.dirname(__file__), 'images')
         for filename in os.listdir(dirname):
-            if not filename.endswith('.jpg'):
+            if not filename.isdecimal():
                 continue
             with open(os.path.join(dirname, filename), 'rb') as f:
                 fc5out, fc6out = sess.run([fc5, fc6], feed_dict={data: f.read()})
@@ -44,6 +44,7 @@ def main(argv=None):
                 'fc5': fc5out.flatten().tolist(),
                 'fc6': fc6out.flatten().tolist(),
             }
+
     for out in ['fc5', 'fc6']:
         filename = os.path.join(os.path.dirname(__file__), '%s.csv' % out)
         with open(filename, 'w') as f:
