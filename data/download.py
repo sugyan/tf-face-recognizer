@@ -23,7 +23,7 @@ for f in os.listdir(data_dir):
 
 # config
 targets, labels = [], {}
-url = url_base + '/labels.json'
+url = url_base + '/labels.json?include_counts=true'
 samples = 0
 
 reader = codecs.getreader('utf-8')
