@@ -45,7 +45,7 @@ class Recognizer:
             capacity=min_queue_examples + 3 * self.batch_size,
             min_after_dequeue=min_queue_examples
         )
-        images = tf.image.resize_images(images, Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE)
+        images = tf.image.resize_images(images, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE])
         tf.image_summary('images', images)
         return images, labels
 

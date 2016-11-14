@@ -30,7 +30,7 @@ app.debug = True
 sess = tf.Session()
 
 # restore label data
-labels = tf.Variable(tf.bytes(), name='labels', trainable=False)
+labels = tf.Variable('', name='labels', trainable=False)
 labels_saver = tf.train.Saver([labels])
 labels_saver.restore(sess, FLAGS.checkpoint_path)
 labels = json.loads(sess.run(labels).decode())
@@ -38,7 +38,7 @@ print('%d labels' % len(labels))
 
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
-resized = tf.image.resize_images(decoded, r.INPUT_SIZE, r.INPUT_SIZE)
+resized = tf.image.resize_images(decoded, [r.INPUT_SIZE, r.INPUT_SIZE])
 inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
 logits = r.inference(inputs, len(labels.keys()) + 1)
 top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
