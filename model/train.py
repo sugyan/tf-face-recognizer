@@ -27,7 +27,7 @@ def labels_json():
 
 def restore_or_initialize(sess):
     if os.path.exists(FLAGS.checkpoint_path):
-        for v in tf.all_variables():
+        for v in tf.global_variables():
             if v in tf.trainable_variables() or "ExponentialMovingAverage" in v.name:
                 try:
                     print('restore variable "%s"' % v.name)
@@ -41,7 +41,7 @@ def restore_or_initialize(sess):
                 sess.run(tf.initialize_variables([v]))
     else:
         print('initialize all variables')
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
 
 def main(argv=None):
     r = Recognizer()
@@ -54,7 +54,7 @@ def main(argv=None):
     losses = r.loss(logits, labels)
     train_op = r.train(losses)
     summary_op = tf.merge_all_summaries()
-    saver = tf.train.Saver(tf.all_variables(), max_to_keep=21)
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
     with tf.Session() as sess:
         summary_writer = tf.train.SummaryWriter('train', graph=sess.graph)
         restore_or_initialize(sess)

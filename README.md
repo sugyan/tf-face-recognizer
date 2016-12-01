@@ -9,4 +9,4 @@ Image classifier model for face recognition.
   - `>= 3.5`
 
 - TensorFlow
-  - `>= 0.11.0`
+  - `>= 0.12.0`
