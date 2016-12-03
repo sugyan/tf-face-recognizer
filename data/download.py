@@ -1,5 +1,3 @@
-import logging
-import random
 import sys
 import os
 import json
