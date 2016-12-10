@@ -11,9 +11,9 @@ import time
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'data/tfrecords',
+tf.app.flags.DEFINE_string('datadir', 'data/tfrecords',
                            """Path to the TFRecord data directory.""")
-tf.app.flags.DEFINE_string('train_dir', 'train',
+tf.app.flags.DEFINE_string('logdir', 'logdir',
                            """Directory where to write event logs and checkpoint.""")
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
                            """Directory where to read model checkpoints.""")
