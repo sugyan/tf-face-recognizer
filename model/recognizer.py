@@ -1,5 +1,5 @@
 import tensorflow as tf
-import os
+
 
 class Recognizer:
     IMAGE_SIZE = 112
@@ -8,46 +8,6 @@ class Recognizer:
 
     def __init__(self, batch_size=128):
         self.batch_size = batch_size
-
-    def inputs(self, files, num_examples_per_epoch_for_train=5000):
-        queues = {}
-        for i in range(len(files)):
-            key = i % 5
-            if key not in queues:
-                queues[key] = []
-            queues[key].append(files[i])
-
-        def read_files(files):
-            fqueue = tf.train.string_input_producer(files)
-            reader = tf.TFRecordReader()
-            key, value = reader.read(fqueue)
-            features = tf.parse_single_example(value, features={
-                'label': tf.FixedLenFeature([], tf.int64),
-                'image_raw': tf.FixedLenFeature([], tf.string),
-            })
-            image = tf.image.decode_jpeg(features['image_raw'], channels=3)
-            image = tf.cast(image, tf.float32)
-
-            # distort
-            image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 3])
-            image = tf.image.random_flip_left_right(image)
-            image = tf.image.random_brightness(image, max_delta=0.4)
-            image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
-            image = tf.image.random_hue(image, max_delta=0.04)
-            image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
-
-            return [tf.image.per_image_standardization(image), features['label']]
-
-        min_queue_examples = num_examples_per_epoch_for_train
-        images, labels = tf.train.shuffle_batch_join(
-            [read_files(files) for files in queues.values()],
-            batch_size=self.batch_size,
-            capacity=min_queue_examples + 3 * self.batch_size,
-            min_after_dequeue=min_queue_examples
-        )
-        images = tf.image.resize_images(images, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE])
-        tf.image_summary('images', images)
-        return images, labels
 
     def inference(self, images, num_classes):
         def _variable_with_weight_decay(name, shape, stddev, wd):

@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(__file__))
 
 from model.recognizer import Recognizer
 from datetime import datetime
@@ -20,10 +20,53 @@ tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
 tf.app.flags.DEFINE_integer('max_steps', 5001,
                             """Number of batches to run.""")
 
+
+def inputs(batch_size, files, num_examples_per_epoch_for_train=5000):
+    queues = {}
+    for i in range(len(files)):
+        key = i % 5
+        if key not in queues:
+            queues[key] = []
+        queues[key].append(files[i])
+
+    def read_files(files):
+        fqueue = tf.train.string_input_producer(files)
+        reader = tf.TFRecordReader()
+        key, value = reader.read(fqueue)
+        features = tf.parse_single_example(value, features={
+            'label': tf.FixedLenFeature([], tf.int64),
+            'image_raw': tf.FixedLenFeature([], tf.string),
+        })
+        image = tf.image.decode_jpeg(features['image_raw'], channels=3)
+        image = tf.cast(image, tf.float32)
+
+        # distort
+        image = tf.random_crop(image, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE, 3])
+        image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_brightness(image, max_delta=0.4)
+        image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
+        image = tf.image.random_hue(image, max_delta=0.04)
+        image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
+
+        return [tf.image.per_image_standardization(image), features['label']]
+
+    min_queue_examples = num_examples_per_epoch_for_train
+    images, labels = tf.train.shuffle_batch_join(
+        [read_files(files) for files in queues.values()],
+        batch_size=batch_size,
+        capacity=min_queue_examples + 3 * batch_size,
+        min_after_dequeue=min_queue_examples
+    )
+    images = tf.image.resize_images(images, [Recognizer.INPUT_SIZE, Recognizer.INPUT_SIZE])
+    tf.image_summary('images', images)
+    return images, labels
+
+
 def labels_json():
     filepath = os.path.join(os.path.join(FLAGS.data_dir, 'labels.json'))
     with open(filepath, 'r') as f:
         return f.read()
+
 
 def restore_or_initialize(sess):
     if os.path.exists(FLAGS.checkpoint_path):
@@ -35,13 +78,14 @@ def restore_or_initialize(sess):
                     restorer.restore(sess, FLAGS.checkpoint_path)
                 except Exception:
                     print('could not restore, initialize!')
-                    sess.run(tf.initialize_variables([v]))
+                    sess.run(tf.variables_initializer([v]))
             else:
                 print('initialize variable "%s"' % v.name)
-                sess.run(tf.initialize_variables([v]))
+                sess.run(tf.variables_initializer([v]))
     else:
         print('initialize all variables')
         sess.run(tf.global_variables_initializer())
+
 
 def main(argv=None):
     r = Recognizer()
@@ -49,7 +93,7 @@ def main(argv=None):
     tf.Variable(labels_data, trainable=False, name='labels')
 
     files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
-    images, labels = r.inputs(files)
+    images, labels = inputs(r.batch_size, files)
     logits = r.inference(images, len(json.loads(labels_data)) + 1)
     losses = r.loss(logits, labels)
     train_op = r.train(losses)
@@ -77,6 +121,7 @@ def main(argv=None):
             if step % 250 == 0 or (step + 1) == FLAGS.max_steps:
                 checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
                 saver.save(sess, checkpoint_path, global_step=step)
+
 
 if __name__ == '__main__':
     tf.app.run()
