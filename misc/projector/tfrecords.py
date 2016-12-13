@@ -8,7 +8,7 @@ import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
-                           """Directory where to read model checkpoints.""")
+                           """Path to model checkpoints.""")
 tf.app.flags.DEFINE_string('input_file', 'data.tfrecords',
                            """Path to the TFRecord data.""")
 tf.app.flags.DEFINE_string('logdir', os.path.join(os.path.dirname(__file__), 'logdir'),

@@ -2,10 +2,15 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+import math
 from model.recognizer import Recognizer
+from tensorflow.contrib.tensorboard.plugins import projector
+import numpy as np
 import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
+tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
+                           """Path to model checkpoints.""")
 tf.app.flags.DEFINE_string('imgdir', os.path.join(os.path.dirname(__file__), 'images'),
                            """Path to the images directory.""")
 tf.app.flags.DEFINE_string('logdir', os.path.join(os.path.dirname(__file__), 'logdir'),
@@ -31,16 +36,56 @@ def main(argv=None):
             try:
                 tf.train.Saver([v]).restore(sess, FLAGS.checkpoint_path)
             except Exception:
+                print('initialize %s' % name)
                 sess.run(tf.variables_initializer([v]))
 
+        outputs = {
+            'fc5': [],
+            'fc6': [],
+            'images': []
+        }
         for file in os.listdir(FLAGS.imgdir):
+            if not file.endswith('.jpg'):
+                continue
             with open(os.path.join(FLAGS.imgdir, file), 'rb') as f:
-                outputs = sess.run({
+                results = sess.run({
                     'fc5': fc5,
                     'fc6': fc6,
                     'image': orig_image
                 }, feed_dict={data: f.read()})
-            print(outputs)
+            outputs['fc5'].append(results['fc5'].flatten().tolist())
+            outputs['fc6'].append(results['fc6'].flatten().tolist())
+            outputs['images'].append(results['image'])
+
+        # write to sprite image file
+        image_path = os.path.join(FLAGS.logdir, 'sprite.jpg')
+        images = outputs['images']
+        rows = []
+        size = int(math.sqrt(len(images))) + 1
+        while len(images) < size * size:
+            images.append(np.zeros((112, 112, 3), dtype=np.uint8))
+        for i in range(size):
+            rows.append(tf.concat(1, images[i*size:(i+1)*size]))
+        jpeg = tf.image.encode_jpeg(tf.concat(0, rows))
+        with open(image_path, 'wb') as f:
+            f.write(sess.run(jpeg))
+        # add embeding data
+        targets = [
+            tf.Variable(np.stack(outputs['fc5']), name='fc5'),
+            tf.Variable(np.stack(outputs['fc6']), name='fc6'),
+        ]
+        config = projector.ProjectorConfig()
+        for v in targets:
+            embedding = config.embeddings.add()
+            embedding.tensor_name = v.name
+            # embedding.metadata_path = metadata_path
+            embedding.sprite.image_path = image_path
+            embedding.sprite.single_image_dim.extend([112, 112])
+        sess.run(tf.variables_initializer(targets))
+        summary_writer = tf.summary.FileWriter(FLAGS.logdir)
+        projector.visualize_embeddings(summary_writer, config)
+        graph_saver = tf.train.Saver(targets)
+        graph_saver.save(sess, os.path.join(FLAGS.logdir, 'model.ckpt'))
 
 
 if __name__ == '__main__':
