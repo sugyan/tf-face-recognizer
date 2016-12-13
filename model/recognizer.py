@@ -10,19 +10,22 @@ class Recognizer:
         self.batch_size = batch_size
 
     def inference(self, images, num_classes):
-        def _variable_with_weight_decay(name, shape, stddev, wd):
+        def _variable_with_weight_decay(name, shape, stddev, wd=0.0):
             var = tf.get_variable(name, shape=shape, initializer=tf.truncated_normal_initializer(stddev=stddev))
-            if wd:
+            if wd > 0.0:
                 weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
                 tf.add_to_collection('losses', weight_decay)
             return var
 
         def _activation_summary(x):
             tensor_name = x.op.name
-            tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
+            tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
         with tf.variable_scope('conv1') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 3, 40], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable(
+                'weights',
+                shape=[3, 3, 3, 40],
+                initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(images, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.get_variable('biases', shape=[40], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
@@ -31,7 +34,10 @@ class Recognizer:
         pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool1')
 
         with tf.variable_scope('conv2') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 40, 60], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable(
+                'weights',
+                shape=[3, 3, 40, 60],
+                initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(pool1, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.get_variable('biases', shape=[60], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
@@ -40,7 +46,10 @@ class Recognizer:
         pool2 = tf.nn.max_pool(conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool2')
 
         with tf.variable_scope('conv3') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 60, 90], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable(
+                'weights',
+                shape=[3, 3, 60, 90],
+                initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(pool2, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.get_variable('biases', shape=[90], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
@@ -49,7 +58,10 @@ class Recognizer:
         pool3 = tf.nn.max_pool(conv3, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool3')
 
         with tf.variable_scope('conv4') as scope:
-            kernel = tf.get_variable('weights', shape=[3, 3, 90, 90], initializer=tf.truncated_normal_initializer(stddev=0.08))
+            kernel = tf.get_variable(
+                'weights',
+                shape=[3, 3, 90, 90],
+                initializer=tf.truncated_normal_initializer(stddev=0.08))
             conv = tf.nn.conv2d(pool3, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.get_variable('biases', shape=[90], initializer=tf.constant_initializer(0.0))
             bias = tf.nn.bias_add(conv, biases)
@@ -62,19 +74,25 @@ class Recognizer:
             for d in pool4.get_shape()[1:].as_list():
                 dim *= d
             reshape = tf.reshape(pool4, [self.batch_size, dim])
-            weights = _variable_with_weight_decay('weights', shape=[dim, 150], stddev=0.02, wd=0.005)
+            weights = _variable_with_weight_decay(
+                'weights',
+                shape=[dim, 150], stddev=0.02, wd=0.005)
             biases = tf.get_variable('biases', shape=[150], initializer=tf.constant_initializer(0.0))
             fc5 = tf.nn.relu(tf.nn.bias_add(tf.matmul(reshape, weights), biases), name=scope.name)
             _activation_summary(fc5)
 
         with tf.variable_scope('fc6') as scope:
-            weights = _variable_with_weight_decay('weights', shape=[150, 150], stddev=0.02, wd=0.005)
+            weights = _variable_with_weight_decay(
+                'weights',
+                shape=[150, 150], stddev=0.02, wd=0.005)
             biases = tf.get_variable('biases', shape=[150], initializer=tf.constant_initializer(0.0))
             fc6 = tf.nn.relu(tf.nn.bias_add(tf.matmul(fc5, weights), biases), name=scope.name)
             _activation_summary(fc6)
 
         with tf.variable_scope('fc7') as scope:
-            weights = tf.get_variable('weights', shape=[150, num_classes], initializer=tf.truncated_normal_initializer(stddev=0.02))
+            weights = _variable_with_weight_decay(
+                'weights',
+                shape=[150, num_classes], stddev=0.02)
             biases = tf.get_variable('biases', shape=[num_classes], initializer=tf.constant_initializer(0.0))
             fc7 = tf.nn.bias_add(tf.matmul(fc6, weights), biases, name=scope.name)
 

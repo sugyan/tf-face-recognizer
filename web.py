@@ -39,7 +39,7 @@ print('%d labels' % len(labels))
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
 resized = tf.image.resize_images(decoded, [r.INPUT_SIZE, r.INPUT_SIZE])
-inputs = tf.expand_dims(tf.image.per_image_whitening(resized), 0)
+inputs = tf.expand_dims(tf.image.per_image_standardization(resized), 0)
 logits = r.inference(inputs, len(labels.keys()) + 1)
 top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
 
