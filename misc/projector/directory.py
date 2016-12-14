@@ -47,6 +47,7 @@ def main(argv=None):
         for file in os.listdir(FLAGS.imgdir):
             if not file.endswith('.jpg'):
                 continue
+            print('processing {}...'.format(file))
             with open(os.path.join(FLAGS.imgdir, file), 'rb') as f:
                 results = sess.run({
                     'fc5': fc5,

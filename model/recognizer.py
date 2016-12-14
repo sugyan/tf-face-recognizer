@@ -2,8 +2,6 @@ import tensorflow as tf
 
 
 class Recognizer:
-    IMAGE_SIZE = 112
-    INPUT_SIZE = 96
     MOVING_AVERAGE_DECAY = 0.9999
 
     def __init__(self, batch_size=128):
