@@ -63,7 +63,7 @@ def inputs(batch_size, files, num_examples_per_epoch_for_train=5000):
 
 
 def labels_json():
-    filepath = os.path.join(os.path.join(FLAGS.data_dir, 'labels.json'))
+    filepath = os.path.join(os.path.join(FLAGS.datadir, 'labels.json'))
     with open(filepath, 'r') as f:
         return f.read()
 
@@ -92,7 +92,7 @@ def main(argv=None):
     labels_data = labels_json()
     tf.Variable(labels_data, trainable=False, name='labels')
 
-    files = [os.path.join(FLAGS.data_dir, f) for f in os.listdir(os.path.join(FLAGS.data_dir)) if f.endswith('.tfrecords')]
+    files = [os.path.join(FLAGS.datadir, f) for f in os.listdir(os.path.join(FLAGS.datadir)) if f.endswith('.tfrecords')]
     images, labels = inputs(r.batch_size, files)
     logits = r.inference(images, len(json.loads(labels_data)) + 1)
     losses = r.loss(logits, labels)
