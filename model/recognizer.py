@@ -108,7 +108,7 @@ class Recognizer:
         loss_averages_op = loss_averages.apply(losses + [total_loss])
 
         for l in losses + [total_loss]:
-            tf.scalar_summary(l.op.name + ' (raw)', l)
+            tf.summary.scalar(l.op.name + ' (raw)', l)
 
         # Apply gradients, and add histograms
         with tf.control_dependencies([loss_averages_op]):
@@ -116,10 +116,10 @@ class Recognizer:
             grads = opt.compute_gradients(total_loss)
         apply_gradient_op = opt.apply_gradients(grads)
         for var in tf.trainable_variables():
-            tf.histogram_summary(var.op.name, var)
+            tf.summary.histogram(var.op.name, var)
         for grad, var in grads:
             if grad is not None:
-                tf.histogram_summary(var.op.name + '/gradients', grad)
+                tf.summary.histogram(var.op.name + '/gradients', grad)
 
         # Track the moving averages of all trainable variables
         variable_averages = tf.train.ExponentialMovingAverage(Recognizer.MOVING_AVERAGE_DECAY)
