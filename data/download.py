@@ -25,11 +25,10 @@ for f in os.listdir(data_dir):
 
 # config
 targets, labels = [], {}
-url = url_base + '/labels.json?include_counts=true'
-req = Request(url, None, auth_headers)
 samples = 0
-
 reader = codecs.getreader('utf-8')
+
+req = Request(url_base + '/labels.json?include_counts=true', None, auth_headers)
 for label in json.load(reader(urlopen(req))):
     index_number = label['index_number']
     if index_number is not None:
@@ -40,9 +39,17 @@ for label in json.load(reader(urlopen(req))):
             'sample': sample
         })
         labels[index_number] = label
+req = Request(url_base + '/labels/-1.json', None, auth_headers)
+with urlopen(req) as res:
+    label = json.load(reader(res))
+    samples += label['faces_count']
+    targets.append({
+        'index': 0,
+        'sample': label['faces_count']
+    })
 targets.append({
-    'index': 0,
-    'sample': int(samples / 3)
+    'index': -1,
+    'sample': 10000
 })
 
 # labels data
@@ -50,9 +57,9 @@ with open(os.path.join(os.path.dirname(__file__), 'tfrecords', 'labels.json'), '
     f.write(json.dumps(labels))
 # download source data
 for target in targets:
-    url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urlencode({ 'sample': target['sample'] }))
+    url = url_base + '/faces/tfrecords/%d?%s' % (target['index'], urlencode({'sample': target['sample']}))
     req = Request(url, None, auth_headers)
-    number = 0 if target['index'] == 0 else (target['index'] - 1) / 10 + 1
+    number = 0 if target['index'] <= 0 else (target['index'] - 1) / 10 + 1
     filename = os.path.join(data_dir, '%02d.tfrecords' % number)
     if target['sample'] <= 60:
         with open(filename, 'ab') as f:
@@ -63,5 +70,4 @@ for target in targets:
         with open(filename, 'ab') as f:
             f.write(urlopen(req).read())
         print('%s (%d: %d)' % (filename, target['index'], target['sample']))
-
-print(samples + int(samples / 3))
+print(samples)
