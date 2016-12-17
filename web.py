@@ -14,9 +14,11 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('port', 5000,
-                           """Application port.""")
+                            """Application port.""")
 tf.app.flags.DEFINE_integer('top_k', 5,
-                           """Finds the k largest entries""")
+                            """Finds the k largest entries""")
+tf.app.flags.DEFINE_integer('input_size', 96,
+                            """Size of input image""")
 
 if not os.path.isfile(FLAGS.checkpoint_path):
     print('No checkpoint file found')
@@ -38,7 +40,7 @@ print('%d labels' % len(labels))
 
 input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
-resized = tf.image.resize_images(decoded, [r.INPUT_SIZE, r.INPUT_SIZE])
+resized = tf.image.resize_images(decoded, [FLAGS.input_size, FLAGS.input_size])
 inputs = tf.expand_dims(tf.image.per_image_standardization(resized), 0)
 logits = r.inference(inputs, len(labels.keys()) + 1)
 top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
@@ -49,24 +51,27 @@ variables_to_restore = variable_averages.variables_to_restore()
 saver = tf.train.Saver(variables_to_restore)
 saver.restore(sess, FLAGS.checkpoint_path)
 
+
 @app.route('/labels')
 def label():
     return jsonify(labels=labels)
+
 
 @app.route('/', methods=['POST'])
 def api():
     results = []
     ops = [top_values, top_indices]
     for image in request.form.getlist('images'):
-        values, indices = sess.run(ops, feed_dict={input_data:base64.b64decode(image.split(',')[1])})
+        values, indices = sess.run(ops, feed_dict={input_data: base64.b64decode(image.split(',')[1])})
         top_k = []
         for i in range(FLAGS.top_k):
             top_k.append({
                 'label': labels.get(str(indices.flatten().tolist()[i]), {}),
                 'value': values.flatten().tolist()[i],
             })
-        results.append({ 'top': top_k })
+        results.append({'top': top_k})
     return jsonify(results=results)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=FLAGS.port)
