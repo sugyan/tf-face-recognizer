@@ -16,7 +16,7 @@ tf.app.flags.DEFINE_string('datadir', 'data/tfrecords',
 tf.app.flags.DEFINE_string('logdir', 'logdir',
                            """Directory where to write event logs and checkpoint.""")
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
-                           """Directory where to read model checkpoints.""")
+                           """Path to read model checkpoint.""")
 tf.app.flags.DEFINE_integer('input_size', 96,
                             """Size of input image""")
 tf.app.flags.DEFINE_integer('max_steps', 5001,
