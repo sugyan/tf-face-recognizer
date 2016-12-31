@@ -1,14 +1,11 @@
-from model.recognizer import Recognizer
-
 from flask import Flask, jsonify, request
 import tensorflow as tf
+import model
 
 import base64
 import urllib.request
 import os
 import json
-
-r = Recognizer(batch_size=1)
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
@@ -42,11 +39,11 @@ input_data = tf.placeholder(tf.string)
 decoded = tf.image.decode_jpeg(input_data, channels=3)
 resized = tf.image.resize_images(decoded, [FLAGS.input_size, FLAGS.input_size])
 inputs = tf.expand_dims(tf.image.per_image_standardization(resized), 0)
-logits = r.inference(inputs, len(labels.keys()) + 1)
+logits = model.inference(inputs, len(labels.keys()) + 1)
 top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
 
 # restore model variables
-variable_averages = tf.train.ExponentialMovingAverage(r.MOVING_AVERAGE_DECAY)
+variable_averages = tf.train.ExponentialMovingAverage(model.MOVING_AVERAGE_DECAY)
 variables_to_restore = variable_averages.variables_to_restore()
 saver = tf.train.Saver(variables_to_restore)
 saver.restore(sess, FLAGS.checkpoint_path)

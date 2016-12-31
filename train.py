@@ -1,12 +1,10 @@
-import os
-import sys
-sys.path.append(os.path.dirname(__file__))
-
-from model.recognizer import Recognizer
 from datetime import datetime
 import tensorflow as tf
 import numpy as np
+import model
+
 import json
+import os
 import time
 
 FLAGS = tf.app.flags.FLAGS
@@ -86,15 +84,15 @@ def restore_or_initialize(sess):
 
 
 def main(argv=None):
-    r = Recognizer()
     labels_data = labels_json()
     tf.Variable(labels_data, trainable=False, name='labels')
 
+    batch_size = 128
     files = [os.path.join(FLAGS.datadir, f) for f in os.listdir(os.path.join(FLAGS.datadir)) if f.endswith('.tfrecords')]
-    images, labels = inputs(r.batch_size, files)
-    logits = r.inference(images, len(json.loads(labels_data)) + 1)
-    losses = r.loss(logits, labels)
-    train_op = r.train(losses)
+    images, labels = inputs(batch_size, files)
+    logits = model.inference(images, len(json.loads(labels_data)) + 1)
+    losses = model.loss(logits, labels)
+    train_op = model.train(losses)
     summary_op = tf.summary.merge_all()
     saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
     with tf.Session() as sess:
@@ -103,7 +101,8 @@ def main(argv=None):
 
         tf.train.start_queue_runners(sess=sess)
 
-        for step in range(FLAGS.max_steps):
+        # for step in range(FLAGS.max_steps):
+        for step in range(10):
             start_time = time.time()
             _, loss_value = sess.run([train_op, losses])
             duration = time.time() - start_time
