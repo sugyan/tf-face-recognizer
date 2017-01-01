@@ -101,8 +101,7 @@ def main(argv=None):
 
         tf.train.start_queue_runners(sess=sess)
 
-        # for step in range(FLAGS.max_steps):
-        for step in range(10):
+        for step in range(FLAGS.max_steps):
             start_time = time.time()
             _, loss_value = sess.run([train_op, losses])
             duration = time.time() - start_time
