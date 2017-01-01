@@ -96,7 +96,7 @@ def main(argv=None):
     summary_op = tf.summary.merge_all()
     saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
     with tf.Session() as sess:
-        summary_writer = tf.summary.FileWriter('train', graph=sess.graph)
+        summary_writer = tf.summary.FileWriter(FLAGS.logdir, graph=sess.graph)
         restore_or_initialize(sess)
 
         tf.train.start_queue_runners(sess=sess)
