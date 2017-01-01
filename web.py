@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request
 import tensorflow as tf
-import model
 
 import base64
 import urllib.request
@@ -8,8 +7,8 @@ import os
 import json
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
-                           """Directory where to read model checkpoints.""")
+tf.app.flags.DEFINE_string('model_path', '/tmp/model.pb',
+                           """Directory where to read model data.""")
 tf.app.flags.DEFINE_integer('port', 5000,
                             """Application port.""")
 tf.app.flags.DEFINE_integer('top_k', 5,
@@ -17,36 +16,24 @@ tf.app.flags.DEFINE_integer('top_k', 5,
 tf.app.flags.DEFINE_integer('input_size', 96,
                             """Size of input image""")
 
-if not os.path.isfile(FLAGS.checkpoint_path):
-    print('No checkpoint file found')
-    urllib.request.urlretrieve(os.environ['CHECKPOINT_DOWNLOAD_URL'], FLAGS.checkpoint_path)
+sess = tf.Session()
+
+# load model data, get top_k
+if not os.path.isfile(FLAGS.model_path):
+    print('No model data file found')
+    urllib.request.urlretrieve(os.environ['MODEL_DOWNLOAD_URL'], FLAGS.model_path)
+graph_def = tf.GraphDef()
+with tf.gfile.FastGFile(FLAGS.model_path, 'rb') as f:
+    graph_def.ParseFromString(f.read())
+tf.import_graph_def(graph_def, name='')
+fc7 = sess.graph.get_tensor_by_name('fc7/fc7:0')
+top_values, top_indices = tf.nn.top_k(tf.nn.softmax(fc7), k=FLAGS.top_k)
+# retrieve labels
+labels = json.loads(sess.run(sess.graph.get_tensor_by_name('labels:0')).decode())
 
 # Flask setup
 app = Flask(__name__)
 app.debug = True
-
-# Logits setup
-sess = tf.Session()
-
-# restore label data
-labels = tf.Variable('', name='labels', trainable=False)
-labels_saver = tf.train.Saver([labels])
-labels_saver.restore(sess, FLAGS.checkpoint_path)
-labels = json.loads(sess.run(labels).decode())
-print('%d labels' % len(labels))
-
-input_data = tf.placeholder(tf.string)
-decoded = tf.image.decode_jpeg(input_data, channels=3)
-resized = tf.image.resize_images(decoded, [FLAGS.input_size, FLAGS.input_size])
-inputs = tf.expand_dims(tf.image.per_image_standardization(resized), 0)
-logits = model.inference(inputs, len(labels.keys()) + 1)
-top_values, top_indices = tf.nn.top_k(tf.nn.softmax(logits), k=FLAGS.top_k)
-
-# restore model variables
-variable_averages = tf.train.ExponentialMovingAverage(model.MOVING_AVERAGE_DECAY)
-variables_to_restore = variable_averages.variables_to_restore()
-saver = tf.train.Saver(variables_to_restore)
-saver.restore(sess, FLAGS.checkpoint_path)
 
 
 @app.route('/labels')
@@ -59,7 +46,7 @@ def api():
     results = []
     ops = [top_values, top_indices]
     for image in request.form.getlist('images'):
-        values, indices = sess.run(ops, feed_dict={input_data: base64.b64decode(image.split(',')[1])})
+        values, indices = sess.run(ops, feed_dict={'contents:0': base64.b64decode(image.split(',')[1])})
         top_k = []
         for i in range(FLAGS.top_k):
             top_k.append({
