@@ -30,6 +30,7 @@ fc7 = sess.graph.get_tensor_by_name('fc7/fc7:0')
 top_values, top_indices = tf.nn.top_k(tf.nn.softmax(fc7), k=FLAGS.top_k)
 # retrieve labels
 labels = json.loads(sess.run(sess.graph.get_tensor_by_name('labels:0')).decode())
+print('{} labels loaded.'.format(len(labels)))
 
 # Flask setup
 app = Flask(__name__)
