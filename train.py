@@ -116,7 +116,7 @@ def main(argv=None):
                 summary_writer.add_summary(summary_str, step)
             if step % 250 == 0 or (step + 1) == FLAGS.max_steps:
                 checkpoint_path = os.path.join(FLAGS.logdir, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=step)
+                saver.save(sess, checkpoint_path, global_step=step, write_meta_graph=False, write_state=False)
 
 
 if __name__ == '__main__':
