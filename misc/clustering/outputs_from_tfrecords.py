@@ -25,6 +25,7 @@ def main(argv=None):
 
     example = tf.placeholder(tf.string)
     features = tf.parse_single_example(example, features={
+        'id': tf.FixedLenFeature([], tf.int64),
         'image_raw': tf.FixedLenFeature([], tf.string)
     })
     with tf.Session() as sess:
@@ -32,9 +33,9 @@ def main(argv=None):
         outputs = {}
         for i, record in enumerate(tf.python_io.tf_record_iterator(FLAGS.file)):
             print('processing {:04d}...'.format(i))
-            image = sess.run(features['image_raw'], feed_dict={example: record})
-            results = sess.run({'fc5': fc5, 'fc6': fc6}, feed_dict={'contents:0': image})
-            outputs[i] = {
+            data = sess.run(features, feed_dict={example: record})
+            results = sess.run({'fc5': fc5, 'fc6': fc6}, feed_dict={'contents:0': data['image_raw']})
+            outputs[data['id']] = {
                 'fc5': results['fc5'].flatten().tolist(),
                 'fc6': results['fc6'].flatten().tolist(),
             }
@@ -43,7 +44,7 @@ def main(argv=None):
         filename = os.path.join(os.path.dirname(__file__), '{}.csv'.format(out))
         with open(filename, 'w') as f:
             for name, values in outputs.items():
-                f.write(','.join(['{:04d}'.format(name)] + [str(x) for x in values[out]]) + '\n')
+                f.write(','.join(['{:07d}'.format(name)] + [str(x) for x in values[out]]) + '\n')
 
 
 if __name__ == '__main__':
