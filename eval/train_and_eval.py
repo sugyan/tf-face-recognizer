@@ -10,8 +10,14 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('datadir', os.path.join(os.path.dirname(__file__), 'data', 'tfrecords'),
                            """Path to the TFRecord data directory.""")
-# tf.app.flags.DEFINE_string('logdir', 'logdir',
-#                            """Directory where to write event logs and checkpoint.""")
+tf.app.flags.DEFINE_string('eval_file',
+                           os.path.join(os.path.dirname(__file__), 'data', 'tfrecords', 'data-00.tfrecords'),
+                           """Path to the TFRecord for evaluation.""")
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 19_200,
+                            'number of examples')
+tf.app.flags.DEFINE_string('logdir',
+                           os.path.join(os.path.dirname(__file__), 'logdir'),
+                           """Directory where to write event logs and checkpoint.""")
 # tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
 #                            """Path to read model checkpoint.""")
 # tf.app.flags.DEFINE_integer('input_size', 96,
@@ -20,51 +26,59 @@ tf.app.flags.DEFINE_string('datadir', os.path.join(os.path.dirname(__file__), 'd
 #                             """Number of batches to run.""")
 
 
-# def inputs(batch_size, files, num_examples_per_epoch_for_train=5000):
-#     queues = {}
-#     for i in range(len(files)):
-#         key = i % 5
-#         if key not in queues:
-#             queues[key] = []
-#         queues[key].append(files[i])
+def distorted_inputs(filenames, distortion=0, batch_size=128):
+    fqueue = tf.train.string_input_producer(filenames)
+    reader = tf.TFRecordReader()
+    _, value = reader.read(fqueue)
+    features = tf.parse_single_example(value, features={
+        'label': tf.FixedLenFeature([], tf.int64),
+        'image_raw': tf.FixedLenFeature([], tf.string),
+    })
+    label = features['label']
+    image = tf.image.decode_jpeg(features['image_raw'], channels=3)
 
-#     def read_files(files):
-#         fqueue = tf.train.string_input_producer(files)
-#         reader = tf.TFRecordReader()
-#         key, value = reader.read(fqueue)
-#         features = tf.parse_single_example(value, features={
-#             'label': tf.FixedLenFeature([], tf.int64),
-#             'image_raw': tf.FixedLenFeature([], tf.string),
-#         })
-#         image = tf.image.decode_jpeg(features['image_raw'], channels=3)
-#         image = tf.cast(image, tf.float32)
+    if distortion == 0:
+        image = tf.random_crop(image, [96, 96, 3])
+    if distortion == 1:
+        bounding_boxes = tf.div(tf.constant([[[8, 8, 104, 104]]], dtype=tf.float32), 112.0)
+        begin, size, _ = tf.image.sample_distorted_bounding_box(
+            tf.shape(image), bounding_boxes,
+            min_object_covered=0.9)
+        image = tf.slice(image, begin, size)
+        image = tf.image.resize_images(image, tf.to_int32(tf.truncated_normal([2], mean=96.0, stddev=24.0)))
+        image = tf.image.resize_images(image, [96, 96])
+    # common distortion
+    image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_brightness(image, max_delta=0.4)
+    image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
+    image = tf.image.random_hue(image, max_delta=0.04)
+    image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
+    image = tf.image.per_image_standardization(image)
 
-#         # distort
-#         image = tf.random_crop(image, [FLAGS.input_size, FLAGS.input_size, 3])
-#         image = tf.image.random_flip_left_right(image)
-#         image = tf.image.random_brightness(image, max_delta=0.4)
-#         image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
-#         image = tf.image.random_hue(image, max_delta=0.04)
-#         image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
-
-#         return [tf.image.per_image_standardization(image), features['label']]
-
-#     min_queue_examples = num_examples_per_epoch_for_train
-#     images, labels = tf.train.shuffle_batch_join(
-#         [read_files(files) for files in queues.values()],
-#         batch_size=batch_size,
-#         capacity=min_queue_examples + 3 * batch_size,
-#         min_after_dequeue=min_queue_examples
-#     )
-#     images = tf.image.resize_images(images, [FLAGS.input_size, FLAGS.input_size])
-#     tf.summary.image('images', images)
-#     return images, labels
+    min_fraction_of_examples_in_queue = 0.4
+    min_queue_examples = int(FLAGS.num_examples_per_epoch_for_train * min_fraction_of_examples_in_queue)
+    images, labels = tf.train.shuffle_batch(
+        [image, label], batch_size, min_queue_examples + 3 * batch_size, min_queue_examples)
+    tf.summary.image('disotrted_inputs', images, max_outputs=16)
+    return images, labels
 
 
-# def labels_json():
-#     filepath = os.path.join(os.path.join(FLAGS.datadir, 'labels.json'))
-#     with open(filepath, 'r') as f:
-#         return f.read()
+def inputs(filename, batch_size=100):
+    fqueue = tf.train.string_input_producer([filename])
+    reader = tf.TFRecordReader()
+    _, value = reader.read(fqueue)
+    features = tf.parse_single_example(value, features={
+        'label': tf.FixedLenFeature([], tf.int64),
+        'image_raw': tf.FixedLenFeature([], tf.string),
+    })
+    label = features['label']
+    image = tf.image.decode_jpeg(features['image_raw'], channels=3)
+    image = tf.image.resize_image_with_crop_or_pad(image, 96, 96)
+    image = tf.image.per_image_standardization(image)
+
+    images, labels = tf.train.batch([image, label], batch_size)
+    tf.summary.image('inputs', images, max_outputs=16)
+    return images, labels
 
 
 # def restore_or_initialize(sess):
@@ -83,20 +97,29 @@ tf.app.flags.DEFINE_string('datadir', os.path.join(os.path.dirname(__file__), 'd
 
 
 def main(argv=None):
-    # batch_size = 128
-    files = [os.path.join(FLAGS.datadir, f) for f in os.listdir(FLAGS.datadir) if f.endswith('.tfrecords')]
-    print(files)
-    # images, labels = inputs(batch_size, files)
+    filenames = []
+    for f in [x for x in os.listdir(FLAGS.datadir) if x.endswith('.tfrecords')]:
+        filepath = os.path.join(FLAGS.datadir, f)
+        if filepath != FLAGS.eval_file:
+            filenames.append(filepath)
+    t_images, t_labels = distorted_inputs(filenames, distortion=1)
+    e_images, e_labels = inputs(FLAGS.eval_file)
     # logits = model.inference(images, len(json.loads(labels_data)) + 1)
     # losses = model.loss(logits, labels)
     # train_op = model.train(losses)
-    # summary_op = tf.summary.merge_all()
+    summary_op = tf.summary.merge_all()
     # saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
-    # with tf.Session() as sess:
-    #     summary_writer = tf.summary.FileWriter(FLAGS.logdir, graph=sess.graph)
-    #     restore_or_initialize(sess)
 
-    #     tf.train.start_queue_runners(sess=sess)
+    with tf.Session() as sess:
+        summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
+        #     restore_or_initialize(sess)
+
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+
+        print(sess.run([e_images, e_labels]))
+        summary_str = sess.run(summary_op)
+        summary_writer.add_summary(summary_str)
 
     #     for step in range(FLAGS.max_steps):
     #         start_time = time.time()
@@ -114,6 +137,8 @@ def main(argv=None):
     #         if step % 250 == 0 or (step + 1) == FLAGS.max_steps:
     #             checkpoint_path = os.path.join(FLAGS.logdir, 'model.ckpt')
     #             saver.save(sess, checkpoint_path, global_step=step, write_meta_graph=False, write_state=False)
+        coord.request_stop()
+        coord.join(threads)
 
 
 if __name__ == '__main__':
