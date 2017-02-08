@@ -130,7 +130,7 @@ def main(argv=None):
                 datetime.now(), step, loss_value, duration))
 
             if step % 100 == 0:
-                # calc presicion
+                # calc precision
                 true_count = 0
                 for _ in range(num_iter):
                     true_count += sess.run(true_count_op)
