@@ -94,10 +94,8 @@ def main(argv=None):
 
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     import model
-    with tf.variable_scope('model', reuse=False):
-        t_logits = model.inference(t_images, FLAGS.num_classes)
-    with tf.variable_scope('model', reuse=True):
-        e_logits = model.inference(e_images, FLAGS.num_classes)
+    t_logits = model.inference(t_images, FLAGS.num_classes, reuse=False)
+    e_logits = model.inference(e_images, FLAGS.num_classes, reuse=True)
     # train ops
     losses = model.loss(t_logits, t_labels)
     train_op = model.train(losses)
