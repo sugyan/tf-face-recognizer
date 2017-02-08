@@ -13,9 +13,9 @@ tf.app.flags.DEFINE_string('datadir', os.path.join(os.path.dirname(__file__), 'd
 tf.app.flags.DEFINE_string('eval_file',
                            os.path.join(os.path.dirname(__file__), 'data', 'tfrecords', 'data-00.tfrecords'),
                            """Path to the TFRecord for evaluation.""")
-tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 19_200,
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 19200,
                             'Number of examples for train')
-tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_eval',   4_800,
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_eval',   4800,
                             'Number of examples for evaluation')
 tf.app.flags.DEFINE_string('logdir',
                            os.path.join(os.path.dirname(__file__), 'logdir'),
@@ -123,10 +123,10 @@ def main(argv=None):
 
         for step in range(FLAGS.max_steps):
             start_time = time.time()
-            _, loss_value = sess.run([train_op, losses])
+            _, loss_value, is_nan_value = sess.run([train_op, losses, is_nan])
             duration = time.time() - start_time
 
-            assert not sess.run(is_nan), 'Model diverged with loss = NaN'
+            assert not is_nan_value, 'Model diverged with loss = NaN'
 
             print('{}: step {:05d}, loss = {:.5f} ({:.3f} sec/batch)'.format(
                 datetime.now(), step, loss_value, duration))
