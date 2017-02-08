@@ -1,10 +1,10 @@
-import json
 import os
+import math
+import sys
 import time
-
 from datetime import datetime
+
 import tensorflow as tf
-import numpy as np
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -14,16 +14,18 @@ tf.app.flags.DEFINE_string('eval_file',
                            os.path.join(os.path.dirname(__file__), 'data', 'tfrecords', 'data-00.tfrecords'),
                            """Path to the TFRecord for evaluation.""")
 tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 19_200,
-                            'number of examples')
+                            'Number of examples for train')
+tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_eval',   4_800,
+                            'Number of examples for evaluation')
 tf.app.flags.DEFINE_string('logdir',
                            os.path.join(os.path.dirname(__file__), 'logdir'),
                            """Directory where to write event logs and checkpoint.""")
 # tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
 #                            """Path to read model checkpoint.""")
-# tf.app.flags.DEFINE_integer('input_size', 96,
-#                             """Size of input image""")
-# tf.app.flags.DEFINE_integer('max_steps', 5001,
-#                             """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('max_steps', 20001,
+                            """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('num_classes', 120,
+                            """Number of classes.""")
 
 
 def distorted_inputs(filenames, distortion=0, batch_size=128):
@@ -81,21 +83,6 @@ def inputs(filename, batch_size=100):
     return images, labels
 
 
-# def restore_or_initialize(sess):
-#     for v in tf.global_variables():
-#         if v in tf.trainable_variables() or "ExponentialMovingAverage" in v.name:
-#             try:
-#                 print('restore variable "%s"' % v.name)
-#                 restorer = tf.train.Saver([v])
-#                 restorer.restore(sess, FLAGS.checkpoint_path)
-#             except Exception:
-#                 print('could not restore, initialize!')
-#                 sess.run(tf.variables_initializer([v]))
-#         else:
-#             print('initialize variable "%s"' % v.name)
-#             sess.run(tf.variables_initializer([v]))
-
-
 def main(argv=None):
     filenames = []
     for f in [x for x in os.listdir(FLAGS.datadir) if x.endswith('.tfrecords')]:
@@ -104,39 +91,62 @@ def main(argv=None):
             filenames.append(filepath)
     t_images, t_labels = distorted_inputs(filenames, distortion=1)
     e_images, e_labels = inputs(FLAGS.eval_file)
-    # logits = model.inference(images, len(json.loads(labels_data)) + 1)
-    # losses = model.loss(logits, labels)
-    # train_op = model.train(losses)
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    import model
+    with tf.variable_scope('model', reuse=False):
+        t_logits = model.inference(t_images, FLAGS.num_classes)
+    with tf.variable_scope('model', reuse=True):
+        e_logits = model.inference(e_images, FLAGS.num_classes)
+    # train ops
+    losses = model.loss(t_logits, t_labels)
+    train_op = model.train(losses)
+    is_nan = tf.is_nan(losses)
+    # eval ops, variables
+    in_top_k = tf.nn.in_top_k(e_logits, e_labels, 1)
+    true_count_op = tf.count_nonzero(in_top_k, dtype=tf.bool)
+    e_batch_size = int(in_top_k.get_shape()[0])
+    num_iter = int(math.ceil(1.0 * FLAGS.num_examples_per_epoch_for_eval / e_batch_size))
+    total_count = num_iter * e_batch_size
+
+    # summary
     summary_op = tf.summary.merge_all()
-    # saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
+
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
 
     with tf.Session() as sess:
         summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
-        #     restore_or_initialize(sess)
+        sess.run(tf.global_variables_initializer())
 
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
 
-        print(sess.run([e_images, e_labels]))
-        summary_str = sess.run(summary_op)
-        summary_writer.add_summary(summary_str)
+        for step in range(FLAGS.max_steps):
+            start_time = time.time()
+            _, loss_value = sess.run([train_op, losses])
+            duration = time.time() - start_time
 
-    #     for step in range(FLAGS.max_steps):
-    #         start_time = time.time()
-    #         _, loss_value = sess.run([train_op, losses])
-    #         duration = time.time() - start_time
+            assert not sess.run(is_nan), 'Model diverged with loss = NaN'
 
-    #         assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
+            print('{}: step {:05d}, loss = {:.5f} ({:.3f} sec/batch)'.format(
+                datetime.now(), step, loss_value, duration))
 
-    #         format_str = '%s: step %d, loss = %.5f (%.3f sec/batch)'
-    #         print(format_str % (datetime.now(), step, loss_value, duration))
+            if step % 100 == 0:
+                # calc presicion
+                true_count = 0
+                for _ in range(num_iter):
+                    true_count += sess.run(true_count_op)
+                precision = 100.0 * true_count / total_count
+                print('{}: precision = {:.3f} %'.format(datetime.now(), precision))
+                # write summary
+                summary = tf.Summary()
+                summary.ParseFromString(sess.run(summary_op))
+                summary.value.add(tag='precision', simple_value=precision)
+                summary_writer.add_summary(summary, global_step=step)
+            if step % 1000 == 0:
+                checkpoint_path = os.path.join(FLAGS.logdir, 'model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=step)
 
-    #         if step % 100 == 0:
-    #             summary_str = sess.run(summary_op)
-    #             summary_writer.add_summary(summary_str, step)
-    #         if step % 250 == 0 or (step + 1) == FLAGS.max_steps:
-    #             checkpoint_path = os.path.join(FLAGS.logdir, 'model.ckpt')
-    #             saver.save(sess, checkpoint_path, global_step=step, write_meta_graph=False, write_state=False)
         coord.request_stop()
         coord.join(threads)
 
