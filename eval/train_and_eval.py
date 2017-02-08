@@ -101,9 +101,8 @@ def main(argv=None):
     train_op = model.train(losses)
     is_nan = tf.is_nan(losses)
     # eval ops, variables
-    in_top_k = tf.nn.in_top_k(e_logits, e_labels, 1)
-    true_count_op = tf.count_nonzero(in_top_k, dtype=tf.bool)
-    e_batch_size = int(in_top_k.get_shape()[0])
+    true_count_op = tf.count_nonzero(tf.nn.in_top_k(e_logits, e_labels, 1))
+    e_batch_size = int(e_logits.get_shape()[0])
     num_iter = int(math.ceil(1.0 * FLAGS.num_examples_per_epoch_for_eval / e_batch_size))
     total_count = num_iter * e_batch_size
 
