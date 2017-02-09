@@ -13,15 +13,13 @@ tf.app.flags.DEFINE_string('datadir', os.path.join(os.path.dirname(__file__), 'd
 tf.app.flags.DEFINE_string('eval_file',
                            os.path.join(os.path.dirname(__file__), 'data', 'tfrecords', 'data-00.tfrecords'),
                            """Path to the TFRecord for evaluation.""")
+tf.app.flags.DEFINE_string('logdir',
+                           os.path.join(os.path.dirname(__file__), 'logdir'),
+                           """Directory where to write event logs and checkpoint.""")
 tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_train', 19200,
                             'Number of examples for train')
 tf.app.flags.DEFINE_integer('num_examples_per_epoch_for_eval',   4800,
                             'Number of examples for evaluation')
-tf.app.flags.DEFINE_string('logdir',
-                           os.path.join(os.path.dirname(__file__), 'logdir'),
-                           """Directory where to write event logs and checkpoint.""")
-# tf.app.flags.DEFINE_string('checkpoint_path', '/tmp/model.ckpt',
-#                            """Path to read model checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 20001,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_integer('num_classes', 120,
@@ -113,7 +111,12 @@ def main(argv=None):
 
     with tf.Session() as sess:
         summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
-        sess.run(tf.global_variables_initializer())
+        # restore or initialize variables
+        ckpt = tf.train.get_checkpoint_state(FLAGS.logdir)
+        if ckpt and ckpt.model_checkpoint_path:
+            saver.restore(sess, ckpt.model_checkpoint_path)
+        else:
+            sess.run(tf.global_variables_initializer())
 
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
