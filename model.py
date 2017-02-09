@@ -52,13 +52,13 @@ def inference(images, num_classes, reuse=False):
     with tf.variable_scope('fc5', reuse=reuse) as scope:
         reshape = tf.reshape(pool4, [images.get_shape()[0].value, -1])
         dim = reshape.get_shape()[1].value
-        weights = _variable_with_weight_decay('weights', shape=[dim, 150], wd=0.001)
+        weights = _variable_with_weight_decay('weights', shape=[dim, 150], wd=0.01)
         biases = tf.get_variable('biases', shape=[150], initializer=tf.constant_initializer(0.0))
         fc5 = tf.nn.relu(tf.nn.bias_add(tf.matmul(reshape, weights), biases), name=scope.name)
         _activation_summary(fc5)
 
     with tf.variable_scope('fc6', reuse=reuse) as scope:
-        weights = _variable_with_weight_decay('weights', shape=[150, 150], wd=0.001)
+        weights = _variable_with_weight_decay('weights', shape=[150, 150], wd=0.01)
         biases = tf.get_variable('biases', shape=[150], initializer=tf.constant_initializer(0.0))
         fc6 = tf.nn.relu(tf.nn.bias_add(tf.matmul(fc5, weights), biases), name=scope.name)
         _activation_summary(fc6)
