@@ -41,7 +41,14 @@ def inputs(batch_size, files, num_examples_per_epoch_for_train=5000):
         image = tf.cast(image, tf.float32)
 
         # distort
-        image = tf.random_crop(image, [FLAGS.input_size, FLAGS.input_size, 3])
+        bounding_boxes = tf.div(tf.constant([[[8, 8, 104, 104]]], dtype=tf.float32), 112.0)
+        begin, size, _ = tf.image.sample_distorted_bounding_box(
+            tf.shape(image), bounding_boxes,
+            min_object_covered=0.95,
+            aspect_ratio_range=[9.0/10.0, 10.0/9.0])
+        image = tf.slice(image, begin, size)
+        image = tf.image.resize_images(image, tf.to_int32(tf.truncated_normal([2], mean=96.0, stddev=24.0)))
+        image = tf.image.resize_images(image, [FLAGS.input_size, FLAGS.input_size])
         image = tf.image.random_flip_left_right(image)
         image = tf.image.random_brightness(image, max_delta=0.4)
         image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
