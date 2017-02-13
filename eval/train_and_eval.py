@@ -115,8 +115,10 @@ def main(argv=None):
         # restore or initialize variables
         ckpt = tf.train.get_checkpoint_state(FLAGS.logdir)
         if ckpt and ckpt.model_checkpoint_path:
+            print('restore variables from {}.'.format(ckpt.model_checkpoint_path))
             saver.restore(sess, ckpt.model_checkpoint_path)
         else:
+            print('initialize all variables.')
             sess.run(tf.global_variables_initializer())
 
         coord = tf.train.Coordinator()
