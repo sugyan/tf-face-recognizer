@@ -100,9 +100,9 @@ def main(argv=None):
     train_op = model.train(losses)
     is_nan = tf.is_nan(losses)
     # eval ops, variables
-    true_count_op = tf.count_nonzero(tf.nn.in_top_k(e_logits, e_labels, 1))
     e_batch_size = int(e_logits.get_shape()[0])
     num_iter = int(math.ceil(1.0 * FLAGS.num_examples_per_epoch_for_eval / e_batch_size))
+    true_count_op = tf.reduce_sum(tf.train.batch([tf.count_nonzero(tf.nn.in_top_k(e_logits, e_labels, 1))], num_iter))
     total_count = num_iter * e_batch_size
 
     # summary
@@ -134,11 +134,8 @@ def main(argv=None):
             print('{}: step {:05d}, loss = {:.5f} ({:.3f} sec/batch)'.format(
                 datetime.now(), step, loss_value, duration))
 
-            if step % 100 == 0:
-                # calc precision
-                true_count = 0
-                for _ in range(num_iter):
-                    true_count += sess.run(true_count_op)
+            if step % 500 == 0:
+                true_count = sess.run(true_count_op)
                 precision = 100.0 * true_count / total_count
                 print('{}: precision = {:.3f} %'.format(datetime.now(), precision))
                 # write summary
