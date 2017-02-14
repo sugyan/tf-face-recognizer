@@ -43,7 +43,7 @@ def distorted_inputs(filenames, distortion=0, batch_size=128):
         bounding_boxes = tf.div(tf.constant([[[8, 8, 104, 104]]], dtype=tf.float32), 112.0)
         begin, size, _ = tf.image.sample_distorted_bounding_box(
             tf.shape(image), bounding_boxes,
-            min_object_covered=0.95,
+            min_object_covered=(80.0*80.0)/(96.0*96.0),
             aspect_ratio_range=[9.0/10.0, 10.0/9.0])
         image = tf.slice(image, begin, size)
         image = tf.image.resize_images(image, tf.to_int32(tf.truncated_normal([2], mean=96.0, stddev=24.0)))
