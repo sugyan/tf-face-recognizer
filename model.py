@@ -72,7 +72,7 @@ def inference(images, num_classes, reuse=False):
 
 
 def loss(logits, labels):
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
     mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
     tf.add_to_collection('losses', mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')

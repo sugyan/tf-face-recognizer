@@ -108,18 +108,16 @@ def main(argv=None):
     # summary
     summary_op = tf.summary.merge_all()
 
-    saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
-
     with tf.Session() as sess:
         summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
-        # restore or initialize variables
+        # initialize (and restore) variables
+        sess.run(tf.global_variables_initializer())
         ckpt = tf.train.get_checkpoint_state(FLAGS.logdir)
         if ckpt and ckpt.model_checkpoint_path:
             print('restore variables from {}.'.format(ckpt.model_checkpoint_path))
-            saver.restore(sess, ckpt.model_checkpoint_path)
-        else:
-            print('initialize all variables.')
-            sess.run(tf.global_variables_initializer())
+            tf.train.Saver(tf.trainable_variables()).restore(sess, ckpt.model_checkpoint_path)
+        # checkpoint saver
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=21)
 
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
