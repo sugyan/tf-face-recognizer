@@ -62,4 +62,4 @@ venv/
 data/**/*.tfrecords
 data/**/labels.json
 eval/data/**/*.tfrecords
-eval/data/faces.json
+eval/misc/out.jpg
