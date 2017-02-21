@@ -22,7 +22,6 @@ def main(argv=None):
             min_object_covered=(80.0*80.0)/(96.0*96.0),
             aspect_ratio_range=[9.0/10.0, 10.0/9.0])
         image = tf.slice(image, begin, size)
-        image = tf.image.resize_images(image, tf.to_int32(tf.truncated_normal([2], mean=96.0, stddev=24.0)))
         image = tf.image.resize_images(image, [96, 96])
     image = tf.image.random_brightness(image, max_delta=0.4)
     image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
@@ -36,7 +35,7 @@ def main(argv=None):
     with tf.Session() as sess:
         tf.train.start_queue_runners(sess=sess)
 
-        with open(os.path.join(os.path.dirname(__file__), 'out.png'), 'wb') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'out.jpg'), 'wb') as f:
             f.write(sess.run(montage))
 
 
