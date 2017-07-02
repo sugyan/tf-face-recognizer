@@ -8,7 +8,7 @@ import json
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('model_path', '/tmp/model.pb',
-                           """Directory where to read model data.""")
+                           """Path to model data.""")
 tf.app.flags.DEFINE_integer('port', 5000,
                             """Application port.""")
 tf.app.flags.DEFINE_integer('top_k', 5,
