@@ -17,10 +17,12 @@ def inference(images, num_classes, reuse=False):
             tensor_name = x.op.name
             tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
+    inputs = tf.identity(images, name='inputs')
+
     with tf.variable_scope('conv1', reuse=reuse) as scope:
         kernel = tf.get_variable('weights', shape=[3, 3, 3, 40], initializer=xavier_initializer())
         biases = tf.get_variable('biases', shape=[40], initializer=tf.constant_initializer(0.0))
-        conv = tf.nn.conv2d(images, kernel, [1, 1, 1, 1], padding='SAME')
+        conv = tf.nn.conv2d(inputs, kernel, [1, 1, 1, 1], padding='SAME')
         conv1 = tf.nn.relu(tf.nn.bias_add(conv, biases), name=scope.name)
         _activation_summary(conv1)
     pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME', name='pool1')
