@@ -6,12 +6,12 @@ Flask==0.12
 html5lib==0.9999999
 itsdangerous==0.24
 Jinja2==2.9.5
-Markdown==2.2.0
+Markdown==2.6.8
 MarkupSafe==0.23
 numpy==1.13.0
 packaging==16.8
 protobuf==3.3.0
 pyparsing==2.2.0
 six==1.10.0
-tensorflow==1.2.0
+tensorflow==1.2.1
 Werkzeug==0.12.2
