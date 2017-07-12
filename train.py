@@ -75,18 +75,19 @@ def labels_json():
 
 
 def restore_or_initialize(sess):
+    initialize_variables = []
     for v in tf.global_variables():
         if v in tf.trainable_variables() or "ExponentialMovingAverage" in v.name:
-            try:
+            if tf.train.checkpoint_exists(FLAGS.checkpoint_path):
                 print('restore variable "%s"' % v.name)
                 restorer = tf.train.Saver([v])
-                restorer.restore(sess, FLAGS.checkpoint_path)
-            except Exception:
-                print('could not restore, initialize!')
-                sess.run(tf.variables_initializer([v]))
-        else:
-            print('initialize variable "%s"' % v.name)
-            sess.run(tf.variables_initializer([v]))
+                try:
+                    restorer.restore(sess, FLAGS.checkpoint_path)
+                    continue
+                except Exception:
+                    print('could not restore, initialize!')
+        initialize_variables.append(v)
+    sess.run(tf.variables_initializer(initialize_variables))
 
 
 def main(argv=None):
@@ -95,7 +96,8 @@ def main(argv=None):
 
     batch_size = 128
     files = [os.path.join(FLAGS.datadir, f) for f in os.listdir(os.path.join(FLAGS.datadir)) if f.endswith('.tfrecords')]
-    images, labels = inputs(batch_size, files)
+    with tf.variable_scope('inputs'):
+        images, labels = inputs(batch_size, files)
     logits = model.inference(images, len(json.loads(labels_data)) + 1)
     losses = model.loss(logits, labels)
     train_op = model.train(losses)
