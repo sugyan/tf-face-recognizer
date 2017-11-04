@@ -2,6 +2,7 @@ appdirs==1.4.3
 backports.weakref==1.0rc1
 bleach==1.5.0
 click==6.7
+enum34==1.1.6
 Flask==0.12
 html5lib==0.9999999
 itsdangerous==0.24
@@ -13,6 +14,6 @@ packaging==16.8
 protobuf==3.4.0
 pyparsing==2.2.0
 six==1.11.0
-tensorflow==1.3.0
-tensorflow-tensorboard==0.1.8
+tensorflow==1.4.0
+tensorflow-tensorboard==0.4.0rc2
 Werkzeug==0.12.2
