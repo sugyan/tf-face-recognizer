@@ -53,6 +53,7 @@ def inputs(batch_size, files, num_examples_per_epoch_for_train=5000):
         image = tf.image.random_contrast(image, lower=0.6, upper=1.4)
         image = tf.image.random_hue(image, max_delta=0.04)
         image = tf.image.random_saturation(image, lower=0.6, upper=1.4)
+        image.set_shape([None, None, 3])
 
         return [tf.image.per_image_standardization(image), features['label']]
 
