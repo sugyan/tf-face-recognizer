@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers.initializers import xavier_initializer
 
 MOVING_AVERAGE_DECAY = 0.9999
 
